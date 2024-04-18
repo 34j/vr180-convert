@@ -9,16 +9,16 @@ email: 34j.95a2p@simplelogin.com
 full_name: 34j
 github_username: 34j
 has_cli: true
-initial_commit: true
+initial_commit: false
 open_source_license: MIT
-open_with_vscode: true
+open_with_vscode: false
 package_name: vr180_convert
 project_name: VR180 image converter
 project_short_description: Simple VR180 image converter
 project_slug: vr180-convert
-run_poetry_install: true
-setup_github: true
-setup_pre_commit: true
-setup_venv: true
+run_poetry_install: false
+setup_github: false
+setup_pre_commit: false
+setup_venv: false
 venv_version: '3.11'
 
