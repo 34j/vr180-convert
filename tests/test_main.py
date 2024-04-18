@@ -1,5 +1,9 @@
-from vr180_convert.main import FisheyeFormatDecoder, ZoomTransformer, apply, NormalizeTransformer, DenormalizeTransformer, FisheyeFormatEncoder
+from vr180_convert.main import FisheyeFormatDecoder, FisheyeFormatEncoder, apply
 
 
 def test_main():
-    apply("test.jpg", "test.out.jpg", FisheyeFormatDecoder("equidistant") *  FisheyeFormatEncoder("rectilinear"))
+    apply(
+        "test.jpg",
+        "test.out.jpg",
+        FisheyeFormatEncoder("rectilinear") * FisheyeFormatDecoder("equidistant"),
+    )
