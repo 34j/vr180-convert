@@ -28,7 +28,7 @@ vr180-convert = "vr180_convert.cli:app"
 [tool.poetry.dependencies]
 python = "^3.8"
 rich = ">=10"
-typer = {extras = ["all"], version = "^0.9.0"}
+typer = {extras = ["all"], version = "^0.12.0"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0"
