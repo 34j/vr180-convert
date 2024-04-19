@@ -38,13 +38,42 @@
 
 ---
 
-Simple VR180 image converter
+Simple VR180 image converter on top of OpenCV and NumPy.
 
 ## Installation
 
 Install this via pip (or your favourite package manager):
 
-`pip install vr180-convert`
+```shell
+pipx install vr180-convert
+```
+
+## Usage
+
+Simply run the following command to convert 2 fisheye images to a SBS equirectangular VR180 image:
+
+```shell
+v1c left.jpg right.jpg
+```
+
+You can also specify the conversion model by adding Python code directly to the `--transformer` option:
+
+```shell
+v1c left.jpg right.jpg ---transformer "FisheyeFormatEncoder("equidistant") * Euclidean3DRotator(from_euler_angles(np.pi / 4, 0.0, 0.0)) * FisheyeFormatDecoder("equidistant")"
+```
+
+The radius of the non-black area of the input image is assumed by counting black pixels by default, but it would be better to specify it manually to get stable results:
+
+```shell
+v1c left.jpg right.jpg --radius 1000
+v1c left.jpg right.jpg --radius max # min(width, height) / 2
+```
+
+For more information, please refer to the help or API documentation:
+
+```shell
+v1c --help
+```
 
 ## Contributors ✨
 
