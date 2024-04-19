@@ -223,8 +223,8 @@ def equidistant_to_3d(x: NDArray, y: NDArray) -> NDArray:
     """
     phi = np.arctan2(x, y)
     theta = np.sqrt(x**2 + y**2)
-    v = np.array(
-        [np.sin(theta) * np.sin(phi), np.sin(theta) * np.cos(phi), np.cos(theta)]
+    v = np.stack(
+        [np.sin(theta) * np.sin(phi), np.sin(theta) * np.cos(phi), np.cos(theta)], axis=-1
     )
     return v
 
@@ -241,8 +241,8 @@ def equidistant_from_3d(v: NDArray) -> tuple[NDArray, NDArray]:
     tuple[NDArray, NDArray]
         The x and y coordinates in equidistant fisheye format.
     """
-    theta = np.arccos(v[2])
-    phi = np.arctan2(v[0], v[1])
+    theta = np.arccos(v[..., 2])
+    phi = np.arctan2(v[..., 0], v[..., 1])
     x = theta * np.sin(phi)
     y = theta * np.cos(phi)
     return x, y
@@ -259,22 +259,22 @@ class EquirectangularFormatEncoder(TransformerBase):
         if self.is_latitude_y:
             theta_lat = y * (np.pi / 2)
             phi_lon = x * np.cos(theta_lat) * (np.pi / 2)
-            v = np.array(
+            v = np.stack(
                 [
                     np.cos(theta_lat) * np.sin(phi_lon),
                     np.sin(theta_lat),
                     np.cos(theta_lat) * np.cos(phi_lon),
-                ]
+                ], axis=-1
             )
         else:
             theta_lat = x * (np.pi / 2)
             phi_lon = y * np.cos(theta_lat) * (np.pi / 2)
-            v = np.array(
+            v = np.stack(
                 [
                     np.sin(theta_lat),
                     np.cos(theta_lat) * np.sin(phi_lon),
                     np.cos(theta_lat) * np.cos(phi_lon),
-                ]
+                ], axis=-1
             )
                 
         return equidistant_from_3d(v)
@@ -289,9 +289,18 @@ class Euclidean3DTransformer(TransformerBase):
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
         v = equidistant_to_3d(x, y)
+        print(v.shape)
         v = self.transform_v(v)
         x, y = equidistant_from_3d(v)
         return x, y
+from quaternion import quaternion, rotate_vectors, from_euler_angles
+    
+@attrs.define()
+class Euclidean3DRotator(Euclidean3DTransformer):
+    rotation: quaternion
+    
+    def transform_v(self, v: NDArray) -> NDArray:
+        return rotate_vectors(self.rotation, v)
     
 @attrs.define()
 class EquirectangularFormatEncoder2(TransformerBase):
