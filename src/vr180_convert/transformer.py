@@ -243,7 +243,7 @@ class PolynomialScaler(PolarRollTransformer):
     def transform_polar(
         self, theta: NDArray, roll: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
-        return np.polyval(self.coefs_reverse, theta), roll
+        return np.polyval(np.flip(self.coefs_reverse), theta), roll
 
 
 @attrs.define()

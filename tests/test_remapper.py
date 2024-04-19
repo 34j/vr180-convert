@@ -70,7 +70,7 @@ def test_apply(
     "transformer",
     [
         Euclidean3DRotator(from_euler_angles(0.0, np.pi / 4, 0.0)),
-        PolynomialScaler([0, 1, -0.1, 0.05]),
+        PolynomialScaler([0, 1, -0.1]),
     ],
 )
 def test_transformer(transformer: TransformerBase) -> None:
@@ -82,14 +82,19 @@ def test_transformer(transformer: TransformerBase) -> None:
     )
 
 
-def test_lr() -> None:
+@pytest.mark.parametrize(
+    "transformer",
+    [
+        Euclidean3DRotator(from_euler_angles(0.0, np.pi / 4, 0.0)),
+        PolynomialScaler(),
+    ],
+)
+def test_lr(transformer: TransformerBase) -> None:
     apply_lr(
-        FisheyeEncoder("equidistant")
-        * Euclidean3DRotator(from_euler_angles(0.0, np.pi / 4, 0.0))
-        * FisheyeDecoder("equidistant"),
+        EquirectangularEncoder() * transformer * FisheyeDecoder("equidistant"),
         left_path=_TEST_IMAGE_PATH,
         right_path=_TEST_IMAGE_PATH,
-        out_path=_TEST_DIR / "test.lr.jpg",
+        out_path=_TEST_DIR / f"test.lr.{transformer.__class__.__name__}.jpg",
         radius="max",
     )
 

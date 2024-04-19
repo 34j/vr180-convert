@@ -48,6 +48,10 @@ Install this via pip (or your favourite package manager):
 pipx install vr180-convert
 ```
 
+| Left                           | Right                           | Output                                               |
+| ------------------------------ | ------------------------------- | ---------------------------------------------------- |
+| ![left](docs/_static/test.jpg) | ![right](docs/_static/test.jpg) | ![output](docs/_static/test.lr.PolynomialScaler.jpg) |
+
 ## Usage
 
 Simply run the following command to convert 2 fisheye images to a SBS equirectangular VR180 image:
@@ -62,6 +66,7 @@ You can also specify the conversion model by adding Python code directly to the 
 v1c lr left.jpg right.jpg ---transformer "EquirectangularEncoder() * Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * FisheyeDecoder("equidistant")"
 ```
 
+Please refer to the [API documentation](https://vr180-convert.readthedocs.io/) for the available transformers and their parameters.
 For `from_rotation_vector`, please refer to the [numpy-quaternion documentation](https://quaternion.readthedocs.io/en/latest/Package%20API%3A/quaternion/#from_rotation_vector).
 
 The radius of the non-black area of the input image is assumed by counting black pixels by default, but it would be better to specify it manually to get stable results:
