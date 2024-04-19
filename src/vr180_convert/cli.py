@@ -1,7 +1,7 @@
 import typer
 from rich import print
 
-from .main import apply
+from .remapper import apply
 
 app = typer.Typer()
 
