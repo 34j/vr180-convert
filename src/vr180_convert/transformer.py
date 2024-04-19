@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod
 from typing import Any, Literal
 
@@ -47,7 +49,7 @@ class TransformerBase(
     # -> tuple[NDArray, NDArray]:
     #     pass
 
-    def __mul__(self, other: "TransformerBase") -> "MultiTransformer":
+    def __mul__(self, other: TransformerBase) -> MultiTransformer:
         """Multiply two transformers together."""
         if isinstance(self, MultiTransformer) and isinstance(other, MultiTransformer):
             return MultiTransformer(

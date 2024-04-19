@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from colorsys import hls_to_rgb
 from pathlib import Path
 

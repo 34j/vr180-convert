@@ -34,6 +34,7 @@ opencv-python = "^4.9.0.80"
 attrs = "^23.2.0"
 scikit-learn = "^1.4.2"
 numpy-quaternion = "^2023.0.3"
+strenum = "^0.4.15"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0"

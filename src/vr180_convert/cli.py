@@ -1,9 +1,10 @@
-from enum import StrEnum, auto
+from enum import auto
 from pathlib import Path
 
 import cv2 as cv
 import typer
 from quaternion import *  # noqa
+from strenum import StrEnum
 from typing_extensions import Annotated
 
 from vr180_convert.transformer import *  # noqa
@@ -58,10 +59,10 @@ def lr(
     interpolation: Annotated[
         _InterpolationFlags,
         typer.Option(help="Interpolation method, defaults to lanczos4"),
-    ] = _InterpolationFlags.INTER_LANCZOS4,
+    ] = _InterpolationFlags.INTER_LANCZOS4,  # type: ignore
     boarder_mode: Annotated[
         _BorderTypes, typer.Option(help="Border mode, defaults to constant")
-    ] = _BorderTypes.BORDER_CONSTANT,
+    ] = _BorderTypes.BORDER_CONSTANT,  # type: ignore
     boarder_value: int = 0,
     radius: Annotated[
         str, typer.Option(help="Radius of the fisheye image, defaults to 'auto'")
