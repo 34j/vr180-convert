@@ -15,7 +15,12 @@ from vr180_convert import (
     apply_lr,
 )
 from vr180_convert.testing import generate_test_image
-from vr180_convert.transformer import equidistant_from_3d, equidistant_to_3d
+from vr180_convert.transformer import (
+    PolynomialScaler,
+    TransformerBase,
+    equidistant_from_3d,
+    equidistant_to_3d,
+)
 
 _TEST_DIR = Path("tests/.cache")
 _TEST_IMAGE_PATH = _TEST_DIR / "test.jpg"
@@ -61,13 +66,18 @@ def test_apply(
     )
 
 
-def test_rotate() -> None:
+@pytest.mark.parametrize(
+    "transformer",
+    [
+        Euclidean3DRotator(from_euler_angles(0.0, np.pi / 4, 0.0)),
+        PolynomialScaler([0, 1, -0.1, 0.05]),
+    ],
+)
+def test_transformer(transformer: TransformerBase) -> None:
     apply(
-        FisheyeEncoder("equidistant")
-        * Euclidean3DRotator(from_euler_angles(0.0, np.pi / 4, 0.0))
-        * FisheyeDecoder("equidistant"),
+        FisheyeEncoder("equidistant") * transformer * FisheyeDecoder("equidistant"),
         in_paths=_TEST_IMAGE_PATH,
-        out_paths=_TEST_IMAGE_PATH / "test.rotate.jpg",
+        out_paths=_TEST_DIR / f"test.transformer.{transformer.__class__.__name__}.jpg",
         radius="max",
     )
 

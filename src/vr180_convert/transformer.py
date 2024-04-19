@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from typing import Any, Literal
+from typing import Any, Literal, Sequence
 
 import attrs
 import numpy as np
@@ -234,6 +234,16 @@ class FisheyeDecoder(PolarRollTransformer):
             return np.sin(theta), roll
         else:
             raise ValueError(f"Unknown mapping type: {self.mapping_type}")
+
+
+@attrs.define()
+class PolynomialScaler(PolarRollTransformer):
+    coefs_reverse: Sequence[float] = [0, 1]
+
+    def transform_polar(
+        self, theta: NDArray, roll: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        return np.polyval(self.coefs_reverse, theta), roll
 
 
 @attrs.define()

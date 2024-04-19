@@ -127,7 +127,7 @@ def apply(
         for img in images
     ]
 
-    if out_paths_:
+    if out_paths_ is not None:
         for to_path, image in zip(out_paths_, images):
             cv.imwrite(Path(to_path).as_posix(), image)
     return images
