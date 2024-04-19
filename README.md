@@ -53,26 +53,47 @@ pipx install vr180-convert
 Simply run the following command to convert 2 fisheye images to a SBS equirectangular VR180 image:
 
 ```shell
-v1c left.jpg right.jpg
+v1c lr left.jpg right.jpg
 ```
 
 You can also specify the conversion model by adding Python code directly to the `--transformer` option:
 
 ```shell
-v1c left.jpg right.jpg ---transformer "FisheyeFormatEncoder("equidistant") * Euclidean3DRotator(from_euler_angles(np.pi / 4, 0.0, 0.0)) * FisheyeFormatDecoder("equidistant")"
+v1c lr left.jpg right.jpg ---transformer "EquirectangularFormatEncoder() * Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * FisheyeFormatDecoder("equidistant")"
 ```
+
+For `from_rotation_vector`, please refer to the [numpy-quaternion documentation](https://quaternion.readthedocs.io/en/latest/Package%20API%3A/quaternion/#from_rotation_vector).
 
 The radius of the non-black area of the input image is assumed by counting black pixels by default, but it would be better to specify it manually to get stable results:
 
 ```shell
-v1c left.jpg right.jpg --radius 1000
-v1c left.jpg right.jpg --radius max # min(width, height) / 2
+v1c lr left.jpg right.jpg --radius 1000
+v1c lr left.jpg right.jpg --radius max # min(width, height) / 2
 ```
+
+To convert a single image, use `v1c s` instead.
 
 For more information, please refer to the help or API documentation:
 
 ```shell
 v1c --help
+```
+
+## Usage as a library
+
+For more complex transformations, it is recommended to create your own `Transformer`.
+
+```python
+from vr180_convert import PolarRollTransformer, apply_lr
+
+class MyTransformer(PolarRollTransformer):
+    def transform_polar(
+        self, theta: NDArray, roll: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        return theta + theta ** 2 * 0.01, roll
+
+transformer = EquirectangularFormatEncoder() * MyTransformer() * FisheyeFormatDecoder("equidistant")
+apply_lr(transformer, left_path="left.jpg", right_path="right.jpg", out_path="output.jpg")
 ```
 
 ## Contributors ✨
