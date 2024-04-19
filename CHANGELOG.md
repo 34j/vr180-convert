@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.0 (2024-04-19)
+
+### Feature
+
+- Add main feat (#16) ([`556aa45`](https://github.com/34j/vr180-convert/commit/556aa451237945965134be49da3382b264e38c40))
+
 ## v0.0.1 (2024-04-19)
 
 ### Fix
