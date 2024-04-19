@@ -71,14 +71,14 @@ class MultiTransformer(TransformerBase):
     def transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
-        print(f"{y[:, y.shape[0] // 2].max()=}, {x[x.shape[1] // 2, :].max()=}")
+        # print(f"{y[:, y.shape[0] // 2].max()=}, {x[x.shape[1] // 2, :].max()=}")
 
         for transformer in self.transformers:
             x, y = transformer.transform(x, y, **kwargs)
-            print(
-                f"{transformer=}, {y[:, y.shape[0] // 2].max()=}, "
-                f"{x[x.shape[1] // 2, :].max()=}"
-            )
+            # print(
+            #     f"{transformer=}, {y[:, y.shape[0] // 2].max()=}, "
+            #     f"{x[x.shape[1] // 2, :].max()=}"
+            # )
         return x, y
 
     # def inverse_transform(self, x: NDArray, y: NDArray,
