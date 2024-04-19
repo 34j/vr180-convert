@@ -1,4 +1,5 @@
 import os
+from typing import Literal
 
 os.environ["OPENBLAS_NUM_THREADS"] = "-1"
 os.environ["MKL_NUM_THREADS"] = "-1"
@@ -8,12 +9,17 @@ from vr180_convert.main import EquirectangularFormatEncoder, Euclidean3DRotator,
 from numpy.testing import assert_allclose
 import numpy as np
 from quaternion import from_euler_angles
+import pytest
 
-def test_apply():
+
+@pytest.mark.parametrize("format", ["rectilinear", "stereographic",
+                                    "equidistant", "equisolid", "orthographic", "equirectangular"])
+def test_apply(format: Literal["rectilinear", "stereographic", "equidistant", "equisolid", "orthographic", "equirectangular"]):
+    encoder = FisheyeFormatEncoder(format) if format != "equirectangular" else EquirectangularFormatEncoder()
     apply(
         "fish2sphere180.jpg",
-        "fish2sphere180.out.jpg",
-        EquirectangularFormatEncoder() * FisheyeFormatDecoder("equidistant") ,
+        f"fish2sphere180.{format}.jpg",
+        encoder * FisheyeFormatDecoder("equidistant") ,
         radius="max"
     )
     

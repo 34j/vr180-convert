@@ -151,7 +151,6 @@ class FisheyeFormatEncoder(PolarRollTransformer):
         self, theta: NDArray, roll: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
         """[-1, 1] -> [-pi/2, pi/2]."""
-        print(theta[theta.shape[0] // 2, 0])
         if self.mapping_type == "rectilinear":
             return np.arctan(theta), roll
         elif self.mapping_type == "stereographic":
@@ -159,7 +158,7 @@ class FisheyeFormatEncoder(PolarRollTransformer):
         elif self.mapping_type == "equidistant":
             return theta * (np.pi / 2), roll
         elif self.mapping_type == "equisolid":
-            return 2 * np.arcsin(theta), roll
+            return 2 * np.arcsin(theta / np.sqrt(2)), roll
         elif self.mapping_type == "orthographic":
             return np.arcsin(theta), roll
         else:
@@ -184,7 +183,7 @@ class FisheyeFormatDecoder(PolarRollTransformer):
         elif self.mapping_type == "equidistant":
             return theta / (np.pi / 2), roll
         elif self.mapping_type == "equisolid":
-            return 2 * np.sin(theta / 2), roll
+            return np.sqrt(2) * np.sin(theta / 2), roll
         elif self.mapping_type == "orthographic":
             return np.sin(theta), roll
         else:
@@ -258,7 +257,7 @@ class EquirectangularFormatEncoder(TransformerBase):
         # longitude: 日本語で経度, theta
         if self.is_latitude_y:
             theta_lat = y * (np.pi / 2)
-            phi_lon = x * np.cos(theta_lat) * (np.pi / 2)
+            phi_lon = x * (np.pi / 2)
             v = np.stack(
                 [
                     np.cos(theta_lat) * np.sin(phi_lon),
