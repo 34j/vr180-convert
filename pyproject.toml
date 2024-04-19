@@ -24,11 +24,17 @@ packages = [
 
 [tool.poetry.scripts]
 vr180-convert = "vr180_convert.cli:app"
+v1c = "vr180_convert.cli:app"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 rich = ">=10"
-typer = {extras = ["all"], version = "^0.12.0"}
+typer = {extras = ["all"], version = "^0.9.0"}
+opencv-python = "^4.9.0.80"
+attrs = "^23.2.0"
+scikit-learn = "^1.4.2"
+numpy-quaternion = "^2023.0.3"
+strenum = "^0.4.15"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0"
@@ -86,6 +92,7 @@ exclude_lines = [
 [tool.ruff]
 target-version = "py38"
 line-length = 88
+unsafe-fixes = true
 ignore = [
     "D203", # 1 blank line required before class docstring
     "D212", # Multi-line docstring summary should start at the first line
@@ -93,6 +100,8 @@ ignore = [
     "D104", # Missing docstring in public package
     "D107", # Missing docstring in `__init__`
     "D401", # First line of docstring should be in imperative mood
+    "D101",
+    "D102",
 ]
 select = [
     "B",   # flake8-bugbear
