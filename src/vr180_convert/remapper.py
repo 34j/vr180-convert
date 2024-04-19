@@ -102,7 +102,7 @@ def apply(
         radius_candidates = [get_radius(image) for image in images]
         radius_ = max(radius_candidates)
     elif radius == "max":
-        radius_ = max(images[0].shape[0] / 2, images[0].shape[1] / 2)
+        radius_ = min(images[0].shape[0] / 2, images[0].shape[1] / 2)
     else:
         radius_ = radius
 
