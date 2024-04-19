@@ -1,15 +1,11 @@
 from abc import ABCMeta, abstractmethod
-from pathlib import Path
 from typing import Any, Literal
 
 import attrs
-import cv2 as cv
 import numpy as np
 from numpy.typing import NDArray
+from quaternion import quaternion, rotate_vectors
 from sklearn.base import BaseEstimator, TransformerMixin
-
-from quaternion import quaternion, rotate_vectors, from_euler_angles
-
 
 
 class TransformerBase(
@@ -17,6 +13,8 @@ class TransformerBase(
     TransformerMixin,
     metaclass=ABCMeta,
 ):
+    """Base class for transformers."""
+
     # def fit(self, image: NDArray, **kwargs: Any) -> None:
     #     pass
 
@@ -24,15 +22,37 @@ class TransformerBase(
     def transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
+        """
+        Transform the input coordinates.
+
+        Parameters
+        ----------
+        x : NDArray
+            x (left-right) coordinates.
+        y : NDArray
+            y (up-down) coordinates.
+        **kwargs : Any
+            Any additional keyword arguments.
+
+        Returns
+        -------
+        tuple[NDArray, NDArray]
+            x and y coordinates after transformation.
+
+        """
         pass
 
     # @abstractmethod
-    # def inverse_transform(self, x: NDArray, y: NDArray, **kwargs: Any) -> tuple[NDArray, NDArray]:
+    # def inverse_transform(self, x: NDArray, y: NDArray, **kwargs: Any)
+    # -> tuple[NDArray, NDArray]:
     #     pass
 
     def __mul__(self, other: "TransformerBase") -> "MultiTransformer":
+        """Multiply two transformers together."""
         if isinstance(self, MultiTransformer) and isinstance(other, MultiTransformer):
-            return MultiTransformer(transformers=[*self.transformers, *other.transformers])
+            return MultiTransformer(
+                transformers=[*self.transformers, *other.transformers]
+            )
         if isinstance(self, MultiTransformer):
             return MultiTransformer(transformers=[*self.transformers, other])
         if isinstance(other, MultiTransformer):
@@ -42,28 +62,50 @@ class TransformerBase(
 
 @attrs.define()
 class MultiTransformer(TransformerBase):
+    """A transformer that applies multiple transformers in sequence."""
+
     transformers: list[TransformerBase]
 
     def transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
         print(f"{y[:, y.shape[0] // 2].max()=}, {x[x.shape[1] // 2, :].max()=}")
-            
+
         for transformer in self.transformers:
             x, y = transformer.transform(x, y, **kwargs)
-            print(f"{transformer=}, {y[:, y.shape[0] // 2].max()=}, {x[x.shape[1] // 2, :].max()=}")
+            print(
+                f"{transformer=}, {y[:, y.shape[0] // 2].max()=}, "
+                f"{x[x.shape[1] // 2, :].max()=}"
+            )
         return x, y
 
-    # def inverse_transform(self, x: NDArray, y: NDArray, **kwargs: Any) -> tuple[NDArray, NDArray]:
+    # def inverse_transform(self, x: NDArray, y: NDArray,
+    # **kwargs: Any) -> tuple[NDArray, NDArray]:
     #     for transformer in reversed(self.transformers):
     #         x, y = transformer.inverse_transform(x, y, **kwargs)
     #     return x, y
 
 
-def get_radius(input: NDArray) -> float:
+def get_radius(input: NDArray, *, threshold: int = 10) -> float:
+    """
+    Estimate the radius of the circle in the image.
+
+    Parameters
+    ----------
+    input : NDArray
+        The input image.
+    threshold : int, optional
+        The threshold to determine if a pixel is black, by default 10
+
+    Returns
+    -------
+    float
+        The estimated radius.
+
+    """
     height = input.shape[0]
     center_row = input[height // 2, :, :]
-    center_row_is_black = np.mean(center_row, axis=-1) < 10
+    center_row_is_black = np.mean(center_row, axis=-1) < threshold
     center_row_is_black_deriv = np.diff(center_row_is_black.astype(int))
 
     # first and last 1 in the derivative
@@ -168,7 +210,6 @@ class FisheyeFormatEncoder(PolarRollTransformer):
             raise ValueError(f"Unknown mapping type: {self.mapping_type}")
 
 
-
 @attrs.define()
 class FisheyeFormatDecoder(PolarRollTransformer):
     mapping_type: Literal[
@@ -204,8 +245,11 @@ class ZoomTransformer(TransformerBase):
         y = y * self.scale
         return x, y
 
+
 def equidistant_to_3d(x: NDArray, y: NDArray) -> NDArray:
-    """Convert 2D coordinates to 3D unit vector.
+    """
+    Convert 2D coordinates to 3D unit vector.
+
     z axis is forward, x axis is right, y axis is up.
 
     Parameters
@@ -219,16 +263,20 @@ def equidistant_to_3d(x: NDArray, y: NDArray) -> NDArray:
     -------
     NDArray
         The 3D unit vector.
+
     """
     phi = np.arctan2(x, y)
     theta = np.sqrt(x**2 + y**2)
     v = np.stack(
-        [np.sin(theta) * np.sin(phi), np.sin(theta) * np.cos(phi), np.cos(theta)], axis=-1
+        [np.sin(theta) * np.sin(phi), np.sin(theta) * np.cos(phi), np.cos(theta)],
+        axis=-1,
     )
     return v
 
+
 def equidistant_from_3d(v: NDArray) -> tuple[NDArray, NDArray]:
-    """Convert 3D unit vector to 2D coordinates.
+    """
+    Convert 3D unit vector to 2D coordinates.
 
     Parameters
     ----------
@@ -239,6 +287,7 @@ def equidistant_from_3d(v: NDArray) -> tuple[NDArray, NDArray]:
     -------
     tuple[NDArray, NDArray]
         The x and y coordinates in equidistant fisheye format.
+
     """
     theta = np.arccos(v[..., 2])
     phi = np.arctan2(v[..., 0], v[..., 1])
@@ -246,10 +295,11 @@ def equidistant_from_3d(v: NDArray) -> tuple[NDArray, NDArray]:
     y = theta * np.cos(phi)
     return x, y
 
+
 @attrs.define()
 class EquirectangularFormatEncoder(TransformerBase):
     is_latitude_y: bool = True
-    
+
     def transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
@@ -263,7 +313,8 @@ class EquirectangularFormatEncoder(TransformerBase):
                     np.cos(theta_lat) * np.sin(phi_lon),
                     np.sin(theta_lat),
                     np.cos(theta_lat) * np.cos(phi_lon),
-                ], axis=-1
+                ],
+                axis=-1,
             )
         else:
             theta_lat = x * (np.pi / 2)
@@ -273,11 +324,13 @@ class EquirectangularFormatEncoder(TransformerBase):
                     np.sin(theta_lat),
                     np.cos(theta_lat) * np.sin(phi_lon),
                     np.cos(theta_lat) * np.cos(phi_lon),
-                ], axis=-1
+                ],
+                axis=-1,
             )
-                
+
         return equidistant_from_3d(v)
-    
+
+
 @attrs.define()
 class Euclidean3DTransformer(TransformerBase):
     @abstractmethod
@@ -292,18 +345,20 @@ class Euclidean3DTransformer(TransformerBase):
         v = self.transform_v(v)
         x, y = equidistant_from_3d(v)
         return x, y
-    
+
+
 @attrs.define()
 class Euclidean3DRotator(Euclidean3DTransformer):
     rotation: quaternion
-    
+
     def transform_v(self, v: NDArray) -> NDArray:
         return rotate_vectors(self.rotation, v)
-    
+
+
 # @attrs.define()
 # class EquirectangularFormatEncoder2(TransformerBase):
 #     is_latitude_y: bool = False
-    
+
 #     def transform(
 #         self, x: NDArray, y: NDArray, **kwargs: Any
 #     ) -> tuple[NDArray, NDArray]:
@@ -313,14 +368,13 @@ class Euclidean3DRotator(Euclidean3DTransformer):
 #         else:
 #             x = x * (np.pi / 2)
 #             y = y * (np.pi / 2) * np.cos(x)
-#         return x, y    
-    # def inverse_transform(
-    #     self, x: NDArray, y: NDArray, **kwargs: Any
-    # ) -> tuple[NDArray, NDArray]:
-    #     v = equidistant_to_3d(x, y)
-    #     longitude = np.arctan2(v[1], v[0])
-    #     latitude = np.arcsin(v[2])
-    #     x = longitude * np.cos(latitude) / (np.pi / 2)
-    #     y = latitude / (np.pi / 2)
-    #     return x, y
-    
+#         return x, y
+# def inverse_transform(
+#     self, x: NDArray, y: NDArray, **kwargs: Any
+# ) -> tuple[NDArray, NDArray]:
+#     v = equidistant_to_3d(x, y)
+#     longitude = np.arctan2(v[1], v[0])
+#     latitude = np.arcsin(v[2])
+#     x = longitude * np.cos(latitude) / (np.pi / 2)
+#     y = latitude / (np.pi / 2)
+#     return x, y

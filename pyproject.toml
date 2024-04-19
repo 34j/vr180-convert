@@ -99,6 +99,8 @@ ignore = [
     "D104", # Missing docstring in public package
     "D107", # Missing docstring in `__init__`
     "D401", # First line of docstring should be in imperative mood
+    "D101",
+    "D102",
 ]
 select = [
     "B",   # flake8-bugbear
