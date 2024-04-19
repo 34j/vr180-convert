@@ -8,7 +8,7 @@ from strenum import StrEnum
 from typing_extensions import Annotated
 
 from vr180_convert.transformer import *  # noqa
-from vr180_convert.transformer import EquirectangularFormatEncoder, FisheyeFormatDecoder
+from vr180_convert.transformer import EquirectangularEncoder, FisheyeDecoder
 
 from .remapper import apply, apply_lr
 
@@ -72,9 +72,7 @@ def lr(
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
     if transformer == "":
-        transformer_ = EquirectangularFormatEncoder() * FisheyeFormatDecoder(
-            "equidistant"
-        )
+        transformer_ = EquirectangularEncoder() * FisheyeDecoder("equidistant")
     else:
         transformer_ = eval(transformer)  # noqa
     apply_lr(
@@ -123,9 +121,7 @@ def s(
 ) -> None:
     """Remap fisheye images to SBS equirectangular images."""
     if transformer == "":
-        transformer_ = EquirectangularFormatEncoder() * FisheyeFormatDecoder(
-            "equidistant"
-        )
+        transformer_ = EquirectangularEncoder() * FisheyeDecoder("equidistant")
     else:
         transformer_ = eval(transformer)  # noqa
 

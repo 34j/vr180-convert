@@ -59,7 +59,7 @@ v1c lr left.jpg right.jpg
 You can also specify the conversion model by adding Python code directly to the `--transformer` option:
 
 ```shell
-v1c lr left.jpg right.jpg ---transformer "EquirectangularFormatEncoder() * Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * FisheyeFormatDecoder("equidistant")"
+v1c lr left.jpg right.jpg ---transformer "EquirectangularEncoder() * Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * FisheyeDecoder("equidistant")"
 ```
 
 For `from_rotation_vector`, please refer to the [numpy-quaternion documentation](https://quaternion.readthedocs.io/en/latest/Package%20API%3A/quaternion/#from_rotation_vector).
@@ -92,7 +92,7 @@ class MyTransformer(PolarRollTransformer):
     ) -> tuple[NDArray, NDArray]:
         return theta + theta ** 2 * 0.01, roll
 
-transformer = EquirectangularFormatEncoder() * MyTransformer() * FisheyeFormatDecoder("equidistant")
+transformer = EquirectangularEncoder() * MyTransformer() * FisheyeDecoder("equidistant")
 apply_lr(transformer, left_path="left.jpg", right_path="right.jpg", out_path="output.jpg")
 ```
 

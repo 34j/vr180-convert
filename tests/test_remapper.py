@@ -7,10 +7,10 @@ from numpy.testing import assert_allclose
 from quaternion import from_euler_angles
 
 from vr180_convert import (
-    EquirectangularFormatEncoder,
+    EquirectangularEncoder,
     Euclidean3DRotator,
-    FisheyeFormatDecoder,
-    FisheyeFormatEncoder,
+    FisheyeDecoder,
+    FisheyeEncoder,
     apply,
     apply_lr,
 )
@@ -49,12 +49,12 @@ def test_apply(
     ]
 ) -> None:
     encoder = (
-        FisheyeFormatEncoder(format)
+        FisheyeEncoder(format)
         if format != "equirectangular"
-        else EquirectangularFormatEncoder()
+        else EquirectangularEncoder()
     )
     apply(
-        encoder * FisheyeFormatDecoder("equidistant"),
+        encoder * FisheyeDecoder("equidistant"),
         in_paths=_TEST_IMAGE_PATH,
         out_paths=_TEST_DIR / f"test.format.{format}.jpg",
         radius="max",
@@ -63,9 +63,9 @@ def test_apply(
 
 def test_rotate() -> None:
     apply(
-        FisheyeFormatEncoder("equidistant")
+        FisheyeEncoder("equidistant")
         * Euclidean3DRotator(from_euler_angles(0.0, np.pi / 4, 0.0))
-        * FisheyeFormatDecoder("equidistant"),
+        * FisheyeDecoder("equidistant"),
         in_paths=_TEST_IMAGE_PATH,
         out_paths=_TEST_IMAGE_PATH / "test.rotate.jpg",
         radius="max",
@@ -74,9 +74,9 @@ def test_rotate() -> None:
 
 def test_lr() -> None:
     apply_lr(
-        FisheyeFormatEncoder("equidistant")
+        FisheyeEncoder("equidistant")
         * Euclidean3DRotator(from_euler_angles(0.0, np.pi / 4, 0.0))
-        * FisheyeFormatDecoder("equidistant"),
+        * FisheyeDecoder("equidistant"),
         left_path=_TEST_IMAGE_PATH,
         right_path=_TEST_IMAGE_PATH,
         out_path=_TEST_DIR / "test.lr.jpg",

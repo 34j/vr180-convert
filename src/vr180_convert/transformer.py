@@ -189,7 +189,7 @@ class PolarRollTransformer(TransformerBase):
 
 
 @attrs.define()
-class FisheyeFormatEncoder(PolarRollTransformer):
+class FisheyeEncoder(PolarRollTransformer):
     mapping_type: Literal[
         "rectilinear", "stereographic", "equidistant", "equisolid", "orthographic"
     ]
@@ -213,7 +213,7 @@ class FisheyeFormatEncoder(PolarRollTransformer):
 
 
 @attrs.define()
-class FisheyeFormatDecoder(PolarRollTransformer):
+class FisheyeDecoder(PolarRollTransformer):
     mapping_type: Literal[
         "rectilinear", "stereographic", "equidistant", "equisolid", "orthographic"
     ]
@@ -299,7 +299,7 @@ def equidistant_from_3d(v: NDArray) -> tuple[NDArray, NDArray]:
 
 
 @attrs.define()
-class EquirectangularFormatEncoder(TransformerBase):
+class EquirectangularEncoder(TransformerBase):
     is_latitude_y: bool = True
 
     def transform(
@@ -358,7 +358,7 @@ class Euclidean3DRotator(Euclidean3DTransformer):
 
 
 # @attrs.define()
-# class EquirectangularFormatEncoder2(TransformerBase):
+# class EquirectangularEncoder2(TransformerBase):
 #     is_latitude_y: bool = False
 
 #     def transform(

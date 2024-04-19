@@ -29,9 +29,9 @@ def test_lr():
             _TEST_IMAGE_PATH.as_posix(),
             _TEST_IMAGE_PATH.as_posix(),
             "--transformer",
-            'FisheyeFormatEncoder("equidistant") * '
+            'FisheyeEncoder("equidistant") * '
             "Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * "
-            'FisheyeFormatDecoder("equidistant")',
+            'FisheyeDecoder("equidistant")',
             "--radius",
             "max",
             "--out-path",
@@ -48,9 +48,9 @@ def test_s():
             "s",
             _TEST_IMAGE_PATH.as_posix(),
             "--transformer",
-            'FisheyeFormatEncoder("equidistant") * '
+            'FisheyeEncoder("equidistant") * '
             "Euclidean3DRotator(from_rotation_vector([np.pi / 4, 0, 0])) * "
-            'FisheyeFormatDecoder("equidistant")',
+            'FisheyeDecoder("equidistant")',
             "--radius",
             "max",
             "--out-path",
