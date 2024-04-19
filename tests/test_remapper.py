@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Literal
 
 import numpy as np
@@ -16,7 +17,14 @@ from vr180_convert import (
 from vr180_convert.testing import generate_test_image
 from vr180_convert.transformer import equidistant_from_3d, equidistant_to_3d
 
-generate_test_image(2048, "test.jpg")
+_TEST_DIR = Path("tests/.cache")
+_TEST_IMAGE_PATH = _TEST_DIR / "test.jpg"
+
+
+@pytest.fixture(scope="session", autouse=True)
+def generate_image():
+    _TEST_DIR.mkdir(exist_ok=True)
+    generate_test_image(2048, _TEST_IMAGE_PATH)
 
 
 @pytest.mark.parametrize(
@@ -47,8 +55,8 @@ def test_apply(
     )
     apply(
         encoder * FisheyeFormatDecoder("equidistant"),
-        in_paths="test.jpg",
-        out_paths=f"test.{format}.jpg",
+        in_paths=_TEST_IMAGE_PATH,
+        out_paths=_TEST_DIR / f"test.format.{format}.jpg",
         radius="max",
     )
 
@@ -58,8 +66,8 @@ def test_rotate() -> None:
         FisheyeFormatEncoder("equidistant")
         * Euclidean3DRotator(from_euler_angles(0.0, np.pi / 4, 0.0))
         * FisheyeFormatDecoder("equidistant"),
-        in_paths="test.jpg",
-        out_paths="test.rotate.jpg",
+        in_paths=_TEST_IMAGE_PATH,
+        out_paths=_TEST_IMAGE_PATH / "test.rotate.jpg",
         radius="max",
     )
 
@@ -69,9 +77,9 @@ def test_lr() -> None:
         FisheyeFormatEncoder("equidistant")
         * Euclidean3DRotator(from_euler_angles(0.0, np.pi / 4, 0.0))
         * FisheyeFormatDecoder("equidistant"),
-        left_path="test.jpg",
-        right_path="test.jpg",
-        out_path="test.out.jpg",
+        left_path=_TEST_IMAGE_PATH,
+        right_path=_TEST_IMAGE_PATH,
+        out_path=_TEST_DIR / "test.lr.jpg",
         radius="max",
     )
 

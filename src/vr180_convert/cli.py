@@ -1,13 +1,15 @@
-import ast
 from enum import StrEnum, auto
 from pathlib import Path
 
 import cv2 as cv
 import typer
+from quaternion import *  # noqa
 from typing_extensions import Annotated
 
+from vr180_convert.transformer import *  # noqa
+from vr180_convert.transformer import EquirectangularFormatEncoder, FisheyeFormatDecoder
+
 from .remapper import apply_lr
-from .transformer import *  # noqa
 
 app = typer.Typer()
 
@@ -67,11 +69,11 @@ def lr(
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
     if transformer == "":
-        transformer_ = EquirectangularFormatEncoder() * FisheyeFormatDecoder(  # noqa
+        transformer_ = EquirectangularFormatEncoder() * FisheyeFormatDecoder(
             "equidistant"
         )
     else:
-        transformer_ = ast.literal_eval(transformer)
+        transformer_ = eval(transformer)  # noqa
     apply_lr(
         transformer=transformer_,
         left_path=left_path,
