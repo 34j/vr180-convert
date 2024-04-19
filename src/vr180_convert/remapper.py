@@ -36,7 +36,7 @@ def apply(
     size_output: tuple[int, int] = (2048, 2048),
     interpolation: int = cv.INTER_LANCZOS4,
     boarder_mode: int = cv.BORDER_CONSTANT,
-    boarder_value: int | tuple[int, int, int] = (0, 33, 0),
+    boarder_value: int | tuple[int, int, int] = 0,
     radius: float | Literal["auto", "max"] = "auto",
 ) -> Sequence[NDArray[np.uint8]]:
     # note that str is Sequence
@@ -79,7 +79,7 @@ def apply_lr(
     size: tuple[int, int] = (2048, 2048),
     interpolation: int = cv.INTER_LANCZOS4,
     boarder_mode: int = cv.BORDER_CONSTANT,
-    boarder_value: int | tuple[int, int, int] = (0, 33, 0),
+    boarder_value: int | tuple[int, int, int] = 0,
     radius: float | Literal["auto", "max"] = "auto",
 ) -> None:
     images = apply(
