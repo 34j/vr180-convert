@@ -25,11 +25,12 @@ def test_lr():
     result = runner.invoke(
         app,
         [
+            "lr",
             _TEST_IMAGE_PATH.as_posix(),
             _TEST_IMAGE_PATH.as_posix(),
             "--transformer",
             'FisheyeFormatEncoder("equidistant") * '
-            "Euclidean3DRotator(from_euler_angles(np.pi / 4, 0.0, 0.0)) * "
+            "Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * "
             'FisheyeFormatDecoder("equidistant")',
             "--radius",
             "max",
@@ -37,4 +38,23 @@ def test_lr():
             (_TEST_DIR / "test.cli.lr.jpg").as_posix(),
         ],
     )
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result.stdout
+
+
+def test_s():
+    result = runner.invoke(
+        app,
+        [
+            "s",
+            _TEST_IMAGE_PATH.as_posix(),
+            "--transformer",
+            'FisheyeFormatEncoder("equidistant") * '
+            "Euclidean3DRotator(from_rotation_vector([np.pi / 4, 0, 0])) * "
+            'FisheyeFormatDecoder("equidistant")',
+            "--radius",
+            "max",
+            "--out-path",
+            (_TEST_DIR / "test.cli.s.jpg").as_posix(),
+        ],
+    )
+    assert result.exit_code == 0, result.stdout
