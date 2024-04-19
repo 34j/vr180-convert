@@ -1,9 +1,29 @@
-from vr180_convert.main import FisheyeFormatDecoder, FisheyeFormatEncoder, apply
+import os
 
+os.environ["OPENBLAS_NUM_THREADS"] = "-1"
+os.environ["MKL_NUM_THREADS"] = "-1"
+os.environ["VECLIB_NUM_THREADS"] = "-1"
 
-def test_main():
+from vr180_convert.main import EquirectangularFormatEncoder, FisheyeFormatDecoder, FisheyeFormatEncoder, apply, apply_lr, equidistant_from_3d, equidistant_to_3d
+from numpy.testing import assert_allclose
+import numpy as np
+def test_apply():
     apply(
-        "test.jpg",
-        "test.out.jpg",
-        FisheyeFormatEncoder("rectilinear") * FisheyeFormatDecoder("equidistant"),
+        "fish2sphere180.jpg",
+        "fish2sphere180.out.jpg",
+        EquirectangularFormatEncoder()* FisheyeFormatDecoder("equidistant") ,
+        radius="max"
     )
+
+def test_lr():
+    apply_lr(
+        "0.jpg",
+        "10.jpg",
+        "test.out.jpg",
+        FisheyeFormatDecoder("equidistant") * EquirectangularFormatEncoder(),
+    )
+
+def test_equidistant_3d():
+    x = np.random.rand(101, 100)
+    y = np.random.rand(101, 100)
+    assert_allclose(equidistant_from_3d(equidistant_to_3d(x, y)), (x, y))
