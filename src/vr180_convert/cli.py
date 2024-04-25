@@ -132,7 +132,8 @@ def lr(
         left_path=left_path,
         right_path=right_path,
         out_path=(
-            Path(left_path).with_suffix(f".out.{DEFAULT_EXTENSION}")
+            Path(left_path).parent
+            / f"{Path(left_path).stem}-{Path(right_path).stem}.{DEFAULT_EXTENSION}"
             if out_path == Path("")
             else out_path
         ),
