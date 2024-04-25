@@ -1,9 +1,12 @@
+from datetime import datetime, timezone
 from enum import auto
+from logging import DEBUG, INFO, basicConfig, getLogger
 from pathlib import Path
 
 import cv2 as cv
 import typer
 from quaternion import *  # noqa
+from rich.logging import RichHandler
 from strenum import StrEnum
 from typing_extensions import Annotated
 
@@ -12,9 +15,23 @@ from vr180_convert.transformer import EquirectangularEncoder, FisheyeDecoder
 
 from .remapper import apply, apply_lr
 
-DEFAULT_EXTENSION = ".png"
+LOG = getLogger(__name__)
+DEFAULT_EXTENSION = "png"
 
 app = typer.Typer()
+
+
+@app.callback()
+def _main(verbose: bool = typer.Option(False, "--verbose", "-v")) -> None:
+    level = INFO
+    if verbose:
+        level = DEBUG
+    basicConfig(
+        level=level,
+        format="%(message)s",
+        datefmt="[%X]",
+        handlers=[RichHandler(rich_tracebacks=True)],
+    )
 
 
 class _InterpolationFlags(StrEnum):
@@ -71,10 +88,45 @@ def lr(
     ] = "auto",
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
+    # evaluate transformer
     if transformer == "":
         transformer_ = EquirectangularEncoder() * FisheyeDecoder("equidistant")
     else:
         transformer_ = eval(transformer)  # noqa
+
+    # find closest time-matched images
+    if left_path.is_dir() and not right_path.is_dir():
+        # find closest time-matched right image
+        # sort with time
+        right_time = right_path.stat().st_mtime
+        left_path_candidates = sorted(
+            left_path.rglob("*"), key=lambda p: abs(p.stat().st_mtime - right_time)
+        )
+        left_path_candidates = [p for p in left_path_candidates if p != right_path]
+        if len(left_path_candidates) == 0:
+            raise ValueError("No time-matched left image found")
+        left_path = left_path_candidates[0]
+    elif not left_path.is_dir() and right_path.is_dir():
+        # find closest time-matched left image
+        # sort with time
+        left_time = left_path.stat().st_mtime
+        right_path_candidates = sorted(
+            right_path.rglob("*"), key=lambda p: abs(p.stat().st_mtime - left_time)
+        )
+        right_path_candidates = [p for p in right_path_candidates if p != left_path]
+        if len(right_path_candidates) == 0:
+            raise ValueError("No time-matched right image found")
+        right_path = right_path_candidates[0]
+    elif left_path.is_dir() and right_path.is_dir():
+        raise ValueError("Both left and right paths must not be directories")
+    LOG.info(
+        f"L: {left_path}"
+        f"@{datetime.fromtimestamp(left_path.stat().st_mtime, timezone.utc)}, "
+        f"R: {right_path}"
+        f"@{datetime.fromtimestamp(right_path.stat().st_mtime, timezone.utc)}"
+    )
+
+    # apply transformer
     apply_lr(
         transformer=transformer_,
         left_path=left_path,
