@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from pathlib import Path
 from typing import Literal, Sequence
 
@@ -13,6 +14,8 @@ from .transformer import (
     TransformerBase,
     get_radius,
 )
+
+LOG = getLogger(__name__)
 
 
 def get_map(
@@ -107,6 +110,7 @@ def apply(
         radius_ = min(images[0].shape[0] / 2, images[0].shape[1] / 2)
     else:
         radius_ = radius
+    LOG.info(f"Radius: {radius_}, strategy: {radius}, image shape: {images[0].shape}")
 
     xmap, ymap = get_map(
         radius=radius_,
@@ -134,7 +138,7 @@ def apply(
 
 
 def apply_lr(
-    transformer: TransformerBase,
+    transformer: TransformerBase | tuple[TransformerBase, TransformerBase],
     *,
     left_path: Path | str,
     right_path: Path | str,
@@ -172,15 +176,31 @@ def apply_lr(
         Radius of the fisheye image, by default &quot;auto&quot;
 
     """
-    images = apply(
-        in_paths=[left_path, right_path],
-        out_paths=None,
-        transformer=transformer,
-        size_output=size_output,
-        interpolation=interpolation,
-        boarder_mode=boarder_mode,
-        boarder_value=boarder_value,
-        radius=radius,
-    )
+    images: Sequence[NDArray[np.uint8]]
+    if isinstance(transformer, tuple):
+        images = [
+            apply(
+                in_paths=in_path,
+                out_paths=None,
+                transformer=transformer,
+                size_output=size_output,
+                interpolation=interpolation,
+                boarder_mode=boarder_mode,
+                boarder_value=boarder_value,
+                radius=radius,
+            )[0]
+            for transformer, in_path in zip(transformer, [left_path, right_path])
+        ]
+    else:
+        images = apply(
+            in_paths=[left_path, right_path],
+            out_paths=None,
+            transformer=transformer,
+            size_output=size_output,
+            interpolation=interpolation,
+            boarder_mode=boarder_mode,
+            boarder_value=boarder_value,
+            radius=radius,
+        )
     combine = np.concatenate(images, axis=1)
     cv.imwrite(Path(out_path).as_posix(), combine)
