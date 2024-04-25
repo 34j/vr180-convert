@@ -47,7 +47,7 @@ def get_map(
         NormalizeTransformer()
         * transformer
         * DenormalizeTransformer(
-            scale=(radius, radius), center=(size_input[0] // 2, size_input[1] // 2)
+            scale=(radius, radius), center=(size_input[1] // 2, size_input[0] // 2)
         )
     ).transform(xmap, ymap)
     xmap, ymap = xmap.astype(np.float32), ymap.astype(np.float32)
