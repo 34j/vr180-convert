@@ -105,8 +105,14 @@ def get_radius(input: NDArray, *, threshold: int = 10) -> float:
         The estimated radius.
 
     """
-    height = input.shape[0]
-    center_row = input[height // 2, :, :]
+    height, width = input.shape[:2]
+    if width > height:
+        center_row = input[height // 2, :, :]
+    else:
+        center_row = input[:, width // 2, :]
+    del height, width
+
+    # determine if a pixel is black
     center_row_is_black = np.mean(center_row, axis=-1) < threshold
     center_row_is_black_deriv = np.diff(center_row_is_black.astype(int))
 
