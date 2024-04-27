@@ -87,6 +87,15 @@ def lr(
         str, typer.Option(help="Radius of the fisheye image, defaults to 'auto'")
     ] = "auto",
     merge: Annotated[bool, typer.Option(help="Merge left and right images")] = False,
+    autosearch_timestamp_calib_r_earlier_l: Annotated[
+        float,
+        typer.Option(
+            "--autosearch-timestamp-calib-r-earlier-l",
+            "-ac",
+            help="Autosearch timestamp calibration "
+            "(right timestamp -= autosearch_timestamp_calib_r_earlier_l) (in seconds)",
+        ),
+    ] = 0.0,
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
     # evaluate transformer
@@ -102,7 +111,9 @@ def lr(
         right_time = right_path.stat().st_mtime
         left_path_candidates = sorted(
             left_path.rglob("*"),
-            key=lambda p: abs(p.stat().st_mtime - right_time),
+            key=lambda p: abs(
+                p.stat().st_mtime - right_time + autosearch_timestamp_calib_r_earlier_l
+            ),
             reverse=False,
         )
         left_path_candidates = [
@@ -119,7 +130,9 @@ def lr(
         left_time = left_path.stat().st_mtime
         right_path_candidates = sorted(
             right_path.rglob("*"),
-            key=lambda p: abs(p.stat().st_mtime - left_time),
+            key=lambda p: abs(
+                p.stat().st_mtime - left_time - autosearch_timestamp_calib_r_earlier_l
+            ),
             reverse=False,
         )
         right_path_candidates = [
