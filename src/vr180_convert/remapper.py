@@ -148,6 +148,7 @@ def apply_lr(
     boarder_mode: int = cv.BORDER_CONSTANT,
     boarder_value: int | tuple[int, int, int] = 0,
     radius: float | Literal["auto", "max"] = "auto",
+    merge: bool = False,
 ) -> None:
     """
     Apply transformer to a pair of images.
@@ -174,6 +175,8 @@ def apply_lr(
         Boarder value for opencv, by default 0
     radius : float | Literal[&quot;auto&quot;, &quot;max&quot;], optional
         Radius of the fisheye image, by default &quot;auto&quot;
+    merge : bool, optional
+        Whether to merge the images mainly for calibration, by default False
 
     """
     images: Sequence[NDArray[np.uint8]]
@@ -202,5 +205,19 @@ def apply_lr(
             boarder_value=boarder_value,
             radius=radius,
         )
-    combine = np.concatenate(images, axis=1)
+    if merge:
+        # https://en.wikipedia.org/wiki/Anaglyph_3D
+        # 3d glass -> L: red filter, R: blue filter
+        # L: blue layer, R: red layer
+        combine = np.stack(
+            [
+                np.mean(images[1], axis=-1),
+                np.zeros_like(images[0][:, :, 0]),
+                np.mean(images[0], axis=-1),
+            ],
+            axis=-1,
+        )
+    else:
+        combine = np.concatenate(images, axis=1)
     cv.imwrite(Path(out_path).as_posix(), combine)
+    LOG.info(f"Saved to {Path(out_path).absolute()}")

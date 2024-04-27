@@ -359,7 +359,6 @@ class Euclidean3DTransformer(TransformerBase):
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
         v = equidistant_to_3d(x, y)
-        print(v.shape)
         v = self.transform_v(v)
         x, y = equidistant_from_3d(v)
         return x, y

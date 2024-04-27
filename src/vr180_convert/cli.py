@@ -86,6 +86,7 @@ def lr(
     radius: Annotated[
         str, typer.Option(help="Radius of the fisheye image, defaults to 'auto'")
     ] = "auto",
+    merge: Annotated[bool, typer.Option(help="Merge left and right images")] = False,
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
     # evaluate transformer
@@ -100,9 +101,15 @@ def lr(
         # sort with time
         right_time = right_path.stat().st_mtime
         left_path_candidates = sorted(
-            left_path.rglob("*"), key=lambda p: abs(p.stat().st_mtime - right_time)
+            left_path.rglob("*"),
+            key=lambda p: abs(p.stat().st_mtime - right_time),
+            reverse=False,
         )
-        left_path_candidates = [p for p in left_path_candidates if p != right_path]
+        left_path_candidates = [
+            p
+            for p in left_path_candidates
+            if (p != right_path) and (p.suffix == right_path.suffix)
+        ]
         if len(left_path_candidates) == 0:
             raise ValueError("No time-matched left image found")
         left_path = left_path_candidates[0]
@@ -111,9 +118,15 @@ def lr(
         # sort with time
         left_time = left_path.stat().st_mtime
         right_path_candidates = sorted(
-            right_path.rglob("*"), key=lambda p: abs(p.stat().st_mtime - left_time)
+            right_path.rglob("*"),
+            key=lambda p: abs(p.stat().st_mtime - left_time),
+            reverse=False,
         )
-        right_path_candidates = [p for p in right_path_candidates if p != left_path]
+        right_path_candidates = [
+            p
+            for p in right_path_candidates
+            if (p != left_path) and (p.suffix == left_path.suffix)
+        ]
         if len(right_path_candidates) == 0:
             raise ValueError("No time-matched right image found")
         right_path = right_path_candidates[0]
@@ -142,6 +155,7 @@ def lr(
         interpolation=getattr(cv, interpolation.upper()),
         boarder_mode=getattr(cv, boarder_mode.upper()),
         boarder_value=boarder_value,
+        merge=merge,
     )
 
 
