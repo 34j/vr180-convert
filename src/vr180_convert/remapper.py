@@ -135,10 +135,10 @@ def rotation_match(
         [[bw, bz, -by, -bx], [-bz, bw, bx, -by], [by, -bx, bw, -bz], [bx, by, bz, bw]]
     )
     S = right_mult_matrix - left_mult_matrix
-    B = np.einsum("kji,kjl->il", S, S)
+    B = np.einsum("jik,jlk->il", S, S)
     eigenvalues, eigenvectors = np.linalg.eig(B)
     q = eigenvectors[:, np.argmin(eigenvalues)]
-    return quaternion(q)
+    return quaternion(*q)
 
 
 def match_lr(
@@ -181,6 +181,7 @@ def match_lr(
     points_ = np.concatenate([points_l, points_r], axis=0)
     images = [cv.imread(Path(from_path).as_posix()) for from_path in in_paths]
     xmap, ymap = points_[:, 0], points_[:, 1]
+    xmap, ymap = xmap.astype(np.float32), ymap.astype(np.float32)
     xmap, ymap = (
         decoder
         * DenormalizeTransformer(
