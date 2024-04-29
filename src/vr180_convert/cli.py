@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from enum import auto
+from hashlib import sha256
 from logging import DEBUG, INFO, basicConfig, getLogger
 from pathlib import Path
 from typing import Any
@@ -98,6 +99,7 @@ def lr(
         ),
     ] = 0.0,
     swap: Annotated[bool, typer.Option(help="Swap left and right images")] = False,
+    name_unique: Annotated[bool, typer.Option(help="Make output name unique")] = False,
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
     # evaluate transformer
@@ -179,9 +181,30 @@ def lr(
     )
 
     # apply transformer
-    filename_default = (
-        f"{Path(left_path).stem}-{Path(right_path).stem}.{DEFAULT_EXTENSION}"
+    name_unique_content = (
+        (
+            "-"
+            + sha256(
+                "".join(
+                    [
+                        transformer,
+                        size,
+                        interpolation,
+                        boarder_mode,
+                        str(boarder_value),
+                        radius,
+                        str(merge),
+                        str(autosearch_timestamp_calib_r_earlier_l),
+                        str(swap),
+                    ]
+                ).encode("utf-8")
+            ).hexdigest()[:8]
+        )
+        if name_unique
+        else ""
     )
+    filename_default = f"{Path(left_path).stem}-"
+    f"{Path(right_path).stem}{name_unique_content}.{DEFAULT_EXTENSION}"
     apply_lr(
         transformer=transformer_,
         left_path=left_path,
