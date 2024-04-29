@@ -188,7 +188,7 @@ def match_lr(
             scale=(radius, radius),
             center=(images[0].shape[1] // 2, images[0].shape[0] // 2),
         )
-    ).transform(xmap, ymap)
+    ).inverse_transform(xmap, ymap)
     v = equidistant_to_3d(xmap, ymap)
     vl, vr = v[: len(points_l)], v[len(points_l) :]
     return rotation_match(vl, vr)
