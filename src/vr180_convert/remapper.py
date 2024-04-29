@@ -209,13 +209,33 @@ def apply_lr(
         # https://en.wikipedia.org/wiki/Anaglyph_3D
         # 3d glass -> L: red filter, R: blue filter
         # L: blue layer, R: red layer
-        combine = np.stack(
-            [
-                np.mean(images[1], axis=-1),
-                np.zeros_like(images[0][:, :, 0]),
-                np.mean(images[0], axis=-1),
-            ],
-            axis=-1,
+        colors = [(0, 0, 255), (255, 0, 0)]
+        combine = np.mean(images[0], axis=-1)[..., None] * np.array(colors[0]).reshape(
+            [1] * (images[0].ndim - 1) + [3]
+        ) + (
+            np.mean(images[1], axis=-1)[..., None]
+            * np.array(colors[1]).reshape([1] * (images[1].ndim - 1) + [3])
+        )
+        combine /= 255
+        cv.putText(
+            combine,
+            "L",
+            (0, len(combine[1]) // 10),
+            cv.FONT_HERSHEY_SIMPLEX,
+            len(combine) // 1000,
+            colors[0],
+            2,
+            cv.LINE_AA,
+        )
+        cv.putText(
+            combine,
+            "R",
+            (len(combine[1]) // 2, len(combine[0]) // 10),
+            cv.FONT_HERSHEY_SIMPLEX,
+            len(combine) // 1000,
+            colors[1],
+            2,
+            cv.LINE_AA,
         )
     else:
         combine = np.concatenate(images, axis=1)
