@@ -44,10 +44,28 @@ class TransformerBase(
         """
         pass
 
-    # @abstractmethod
-    # def inverse_transform(self, x: NDArray, y: NDArray, **kwargs: Any)
-    # -> tuple[NDArray, NDArray]:
-    #     pass
+    @abstractmethod
+    def inverse_transform(
+        self, x: NDArray, y: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        """
+        Inverse transform the input coordinates.
+
+        Parameters
+        ----------
+        x : NDArray
+            x (left-right) coordinates.
+        y : NDArray
+            y (up-down) coordinates.
+        **kwargs : Any
+            Any additional keyword arguments.
+
+        Returns
+        -------
+        tuple[NDArray, NDArray]
+            x and y coordinates after transformation.
+
+        """
 
     def __mul__(self, other: TransformerBase) -> MultiTransformer:
         """Multiply two transformers together."""
@@ -71,21 +89,16 @@ class MultiTransformer(TransformerBase):
     def transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
-        # print(f"{y[:, y.shape[0] // 2].max()=}, {x[x.shape[1] // 2, :].max()=}")
-
         for transformer in self.transformers:
             x, y = transformer.transform(x, y, **kwargs)
-            # print(
-            #     f"{transformer=}, {y[:, y.shape[0] // 2].max()=}, "
-            #     f"{x[x.shape[1] // 2, :].max()=}"
-            # )
         return x, y
 
-    # def inverse_transform(self, x: NDArray, y: NDArray,
-    # **kwargs: Any) -> tuple[NDArray, NDArray]:
-    #     for transformer in reversed(self.transformers):
-    #         x, y = transformer.inverse_transform(x, y, **kwargs)
-    #     return x, y
+    def inverse_transform(
+        self, x: NDArray, y: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        for transformer in reversed(self.transformers):
+            x, y = transformer.inverse_transform(x, y, **kwargs)
+        return x, y
 
 
 def get_radius(input: NDArray, *, threshold: int = 10) -> float:
@@ -137,12 +150,14 @@ class NormalizeTransformer(TransformerBase):
         y = (y - center[1]) / scale[1] * 2
         return x, y
 
-    # def inverse_transform(self, x: NDArray, y: NDArray) -> tuple[NDArray, NDArray]:
-    #     center = self.center or (x.shape[1] / 2, x.shape[0] / 2)
-    #     scale = self.scale or (x.shape[1] / 2, x.shape[0] / 2)
-    #     x = x * scale[0] + center[0]
-    #     y = y * scale[1] + center[1]
-    #     return x, y
+    def inverse_transform(
+        self, x: NDArray, y: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        center = self.center or (x.shape[1] / 2, x.shape[0] / 2)
+        scale = self.scale or (x.shape[1] / 2, x.shape[0] / 2)
+        x = x * scale[0] + center[0]
+        y = y * scale[1] + center[1]
+        return x, y
 
 
 # @attrs.define()
@@ -167,12 +182,14 @@ class DenormalizeTransformer(TransformerBase):
         y = y * scale[1] + center[1]
         return x, y
 
-    # def inverse_transform(self, x: NDArray, y: NDArray) -> tuple[NDArray, NDArray]:
-    #     scale = self.scale
-    #     center = self.center
-    #     x = (x - center[0]) / scale[0]
-    #     y = (y - center[1]) / scale[1]
-    #     return x, y
+    def inverse_transform(
+        self, x: NDArray, y: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        scale = self.scale
+        center = self.center
+        x = (x - center[0]) / scale[0]
+        y = (y - center[1]) / scale[1]
+        return x, y
 
 
 @attrs.define()
@@ -181,6 +198,48 @@ class PolarRollTransformer(TransformerBase):
     def transform_polar(
         self, theta: NDArray, roll: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
+        """
+        Transform using polar coordinates.
+
+        Parameters
+        ----------
+        theta : NDArray
+            The distance or angle from the center (front-facing direction)
+        roll : NDArray
+            The angle around the center (front-facing direction)
+        **kwargs : Any
+            Any additional keyword arguments.
+
+        Returns
+        -------
+        tuple[NDArray, NDArray]
+            theta and roll after transformation.
+
+        """
+        pass
+
+    @abstractmethod
+    def inverse_transform_polar(
+        self, theta: NDArray, roll: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        """
+        Inverse transform using polar coordinates.
+
+        Parameters
+        ----------
+        theta : NDArray
+            The distance or angle from the center (front-facing direction)
+        roll : NDArray
+            The angle around the center (front-facing direction)
+        **kwargs : Any
+            Any additional keyword arguments.
+
+        Returns
+        -------
+        tuple[NDArray, NDArray]
+            theta and roll after transformation.
+
+        """
         pass
 
     def transform(
@@ -193,12 +252,23 @@ class PolarRollTransformer(TransformerBase):
         y = theta * np.sin(roll)
         return x, y
 
+    def inverse_transform(
+        self, x: NDArray, y: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        theta = np.sqrt(x**2 + y**2)
+        roll = np.arctan2(y, x)
+        theta, roll = self.inverse_transform_polar(theta, roll, **kwargs)
+        x = theta * np.cos(roll)
+        y = theta * np.sin(roll)
+        return x, y
+
 
 @attrs.define()
 class FisheyeEncoder(PolarRollTransformer):
     mapping_type: Literal[
         "rectilinear", "stereographic", "equidistant", "equisolid", "orthographic"
     ]
+    """The mapping type of the fisheye image."""
 
     def transform_polar(
         self, theta: NDArray, roll: NDArray, **kwargs: Any
@@ -217,14 +287,7 @@ class FisheyeEncoder(PolarRollTransformer):
         else:
             raise ValueError(f"Unknown mapping type: {self.mapping_type}")
 
-
-@attrs.define()
-class FisheyeDecoder(PolarRollTransformer):
-    mapping_type: Literal[
-        "rectilinear", "stereographic", "equidistant", "equisolid", "orthographic"
-    ]
-
-    def transform_polar(
+    def inverse_transform_polar(
         self, theta: NDArray, roll: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
         """[-pi/2, pi/2] -> [-1, 1]."""
@@ -242,6 +305,43 @@ class FisheyeDecoder(PolarRollTransformer):
             raise ValueError(f"Unknown mapping type: {self.mapping_type}")
 
 
+class InverseTransformer(TransformerBase):
+    def __init__(self, transformer: TransformerBase):
+        self.transformer = transformer
+
+    def transform(
+        self, x: NDArray, y: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        return self.transformer.inverse_transform(x, y, **kwargs)
+
+    def inverse_transform(
+        self, x: NDArray, y: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        return self.transformer.transform(x, y, **kwargs)
+
+
+def FisheyeDecoder(
+    mapping_type: Literal[
+        "rectilinear", "stereographic", "equidistant", "equisolid", "orthographic"
+    ]
+) -> InverseTransformer:
+    """
+    Decodes fisheye image.
+
+    Parameters
+    ----------
+    mapping_type : Literal['rectilinear', 'stereographic', 'equidistant', 'equisolid', 'orthographic']
+        The mapping type of the fisheye image.
+
+    Returns
+    -------
+    InverseTransformer
+        The fisheye decoder.
+
+    """
+    return InverseTransformer(FisheyeEncoder(mapping_type))
+
+
 @attrs.define()
 class PolynomialScaler(PolarRollTransformer):
     coefs_reverse: Sequence[float] = [0, 1]
@@ -250,6 +350,13 @@ class PolynomialScaler(PolarRollTransformer):
         self, theta: NDArray, roll: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
         return np.polyval(np.flip(self.coefs_reverse), theta), roll
+
+    def inverse_transform_polar(
+        self, theta: NDArray, roll: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        raise NotImplementedError(
+            "PolynomialScaler does not support inverse transform."
+        )
 
 
 @attrs.define()
@@ -261,6 +368,13 @@ class ZoomTransformer(TransformerBase):
     ) -> tuple[NDArray, NDArray]:
         x = x * self.scale
         y = y * self.scale
+        return x, y
+
+    def inverse_transform(
+        self, x: NDArray, y: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        x = x / self.scale
+        y = y / self.scale
         return x, y
 
 
@@ -336,7 +450,7 @@ class EquirectangularEncoder(TransformerBase):
             )
         else:
             theta_lat = x * (np.pi / 2)
-            phi_lon = y * np.cos(theta_lat) * (np.pi / 2)
+            phi_lon = y * (np.pi / 2)
             v = np.stack(
                 [
                     np.sin(theta_lat),
@@ -348,6 +462,23 @@ class EquirectangularEncoder(TransformerBase):
 
         return equidistant_from_3d(v)
 
+    def inverse_transform(
+        self, x: NDArray, y: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        if self.is_latitude_y:
+            v = equidistant_to_3d(x, y)
+            theta_lat = np.arcsin(v[..., 1])
+            phi_lon = np.arctan2(v[..., 0], v[..., 2])
+            x = phi_lon / (np.pi / 2)
+            y = theta_lat / (np.pi / 2)
+        else:
+            v = equidistant_to_3d(x, y)
+            theta_lat = np.arcsin(v[..., 0])
+            phi_lon = np.arctan2(v[..., 1], v[..., 2])
+            x = theta_lat / (np.pi / 2)
+            y = phi_lon / (np.pi / 2)
+        return x, y
+
 
 @attrs.define()
 class Euclidean3DTransformer(TransformerBase):
@@ -355,7 +486,19 @@ class Euclidean3DTransformer(TransformerBase):
     def transform_v(self, v: NDArray) -> NDArray:
         pass
 
+    @abstractmethod
+    def inverse_transform_v(self, v: NDArray) -> NDArray:
+        pass
+
     def transform(
+        self, x: NDArray, y: NDArray, **kwargs: Any
+    ) -> tuple[NDArray, NDArray]:
+        v = equidistant_to_3d(x, y)
+        v = self.transform_v(v)
+        x, y = equidistant_from_3d(v)
+        return x, y
+
+    def inverse_transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
         v = equidistant_to_3d(x, y)
@@ -371,27 +514,5 @@ class Euclidean3DRotator(Euclidean3DTransformer):
     def transform_v(self, v: NDArray) -> NDArray:
         return rotate_vectors(self.rotation, v)
 
-
-# @attrs.define()
-# class EquirectangularEncoder2(TransformerBase):
-#     is_latitude_y: bool = False
-
-#     def transform(
-#         self, x: NDArray, y: NDArray, **kwargs: Any
-#     ) -> tuple[NDArray, NDArray]:
-#         if self.is_latitude_y:
-#             y = y * (np.pi / 2)
-#             x = x / np.cos(y) * (np.pi / 2)
-#         else:
-#             x = x * (np.pi / 2)
-#             y = y * (np.pi / 2) * np.cos(x)
-#         return x, y
-# def inverse_transform(
-#     self, x: NDArray, y: NDArray, **kwargs: Any
-# ) -> tuple[NDArray, NDArray]:
-#     v = equidistant_to_3d(x, y)
-#     longitude = np.arctan2(v[1], v[0])
-#     latitude = np.arcsin(v[2])
-#     x = longitude * np.cos(latitude) / (np.pi / 2)
-#     y = latitude / (np.pi / 2)
-#     return x, y
+    def inverse_transform_v(self, v: NDArray) -> NDArray:
+        return rotate_vectors(self.rotation.inverse(), v)
