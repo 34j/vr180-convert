@@ -65,6 +65,28 @@ class _BorderTypes(StrEnum):
     BORDER_ISOLATED = auto()
 
 
+def _get_position_gui(image_path: Path) -> tuple[int, int]:
+    """Get the position of the GUI window."""
+    window_name = "Select position"
+    cv.namedWindow(window_name, cv.WND_PROP_FULLSCREEN)
+    cv.setWindowProperty(window_name, cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+    cv.imshow(window_name, cv.imread(image_path.as_posix()))
+
+    x_, y_ = 0, 0
+
+    def on_mouse(event: int, x: int, y: int, flags: int, param: Any) -> None:
+        nonlocal x_, y_
+        if event == cv.EVENT_LBUTTONDOWN:
+            x_, y_ = x, y
+            cv.destroyWindow(window_name)
+
+    cv.setMouseCallback(window_name, on_mouse)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
+    LOG.info(f"{x_}, {y_}")
+    return x_, y_
+
+
 @app.command()
 def lr(
     left_path: Annotated[Path, typer.Argument(help="Left image path")],
@@ -109,36 +131,9 @@ def lr(
     ] = "",
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
-    # evaluate automatch
-    transformer_: Any
-    if automatch != "":
-        automatch_ = [tuple(chunk.split(",")) for chunk in automatch.split(";")]
-        q = match_lr(
-            FisheyeDecoder("equidistant"),
-            automatch_[:2],  # type: ignore
-            automatch_[2:],  # type: ignore
-            radius=float(radius) if radius not in ["auto", "max"] else radius,  # type: ignore
-            in_paths=[left_path, right_path],
-        )
-        LOG.info(f"Automatched quaternion: {q}")
-        transformer_ = (
-            EquirectangularEncoder()
-            * Euclidean3DRotator(q)
-            * FisheyeDecoder("equidistant"),
-            EquirectangularEncoder() * FisheyeDecoder("equidistant"),
-        )
-    else:
-        # evaluate transformer
-        if transformer == "":
-            transformer_ = EquirectangularEncoder() * FisheyeDecoder("equidistant")
-        else:
-            transformer_ = eval(transformer)  # noqa
-
     if swap:
         left_path, right_path = right_path, left_path
         autosearch_timestamp_calib_r_earlier_l = -autosearch_timestamp_calib_r_earlier_l
-        if isinstance(transformer_, tuple):
-            transformer_ = transformer_[1], transformer_[0]
 
     # find closest time-matched images
     if left_path.is_dir() and not right_path.is_dir():
@@ -204,6 +199,45 @@ def lr(
         f"R: {right_path}"
         f"@{datetime.fromtimestamp(right_path.stat().st_mtime, timezone.utc)}"
     )
+
+    # evaluate automatch
+    transformer_: Any
+    if automatch != "":
+        if automatch == "auto":
+            automatch_ = [
+                _get_position_gui(left_path),
+                _get_position_gui(right_path),
+                _get_position_gui(left_path),
+                _get_position_gui(right_path),
+            ]
+        else:
+            automatch_ = [tuple(chunk.split(",")) for chunk in automatch.split(";")]  # type: ignore
+        q = match_lr(
+            FisheyeDecoder("equidistant"),
+            # odd
+            automatch_[1::2],
+            # even
+            automatch_[::2],
+            radius=float(radius) if radius not in ["auto", "max"] else radius,  # type: ignore
+            in_paths=[left_path, right_path],
+        )
+        LOG.info(f"Automatched quaternion: {q}")
+        transformer_ = (
+            EquirectangularEncoder()
+            * Euclidean3DRotator(q)
+            * FisheyeDecoder("equidistant"),
+            EquirectangularEncoder() * FisheyeDecoder("equidistant"),
+        )
+    else:
+        # evaluate transformer
+        if transformer == "":
+            transformer_ = EquirectangularEncoder() * FisheyeDecoder("equidistant")
+        else:
+            transformer_ = eval(transformer)  # noqa
+
+    if swap:
+        if isinstance(transformer_, tuple):
+            transformer_ = transformer_[1], transformer_[0]
 
     # apply transformer
     name_unique_content = (
