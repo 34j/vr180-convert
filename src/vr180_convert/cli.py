@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from enum import auto
 from logging import DEBUG, INFO, basicConfig, getLogger
 from pathlib import Path
+from typing import Any
 
 import cv2 as cv
 import typer
@@ -96,13 +97,21 @@ def lr(
             "(right timestamp -= autosearch_timestamp_calib_r_earlier_l) (in seconds)",
         ),
     ] = 0.0,
+    swap: Annotated[bool, typer.Option(help="Swap left and right images")] = False,
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
     # evaluate transformer
+    transformer_: Any
     if transformer == "":
         transformer_ = EquirectangularEncoder() * FisheyeDecoder("equidistant")
     else:
         transformer_ = eval(transformer)  # noqa
+
+    if swap:
+        left_path, right_path = right_path, left_path
+        autosearch_timestamp_calib_r_earlier_l = -autosearch_timestamp_calib_r_earlier_l
+        if isinstance(transformer_, tuple):
+            transformer_ = transformer_[1], transformer_[0]
 
     # find closest time-matched images
     if left_path.is_dir() and not right_path.is_dir():
@@ -123,6 +132,14 @@ def lr(
         ]
         if len(left_path_candidates) == 0:
             raise ValueError("No time-matched left image found")
+        if (
+            len(left_path_candidates) > 1
+            and left_path_candidates[0].stat().st_mtime
+            == left_path_candidates[1].stat().st_mtime
+        ):
+            raise ValueError(
+                f"Multiple time-matched left images found: {left_path_candidates}"
+            )
         left_path = left_path_candidates[0]
     elif not left_path.is_dir() and right_path.is_dir():
         # find closest time-matched left image
@@ -142,9 +159,18 @@ def lr(
         ]
         if len(right_path_candidates) == 0:
             raise ValueError("No time-matched right image found")
+        if (
+            len(right_path_candidates) > 1
+            and right_path_candidates[0].stat().st_mtime
+            == right_path_candidates[1].stat().st_mtime
+        ):
+            raise ValueError(
+                f"Multiple time-matched right images found: {right_path_candidates}"
+            )
         right_path = right_path_candidates[0]
     elif left_path.is_dir() and right_path.is_dir():
         raise ValueError("Both left and right paths must not be directories")
+
     LOG.info(
         f"L: {left_path}"
         f"@{datetime.fromtimestamp(left_path.stat().st_mtime, timezone.utc)}, "
@@ -153,15 +179,17 @@ def lr(
     )
 
     # apply transformer
+    filename_default = (
+        f"{Path(left_path).stem}-{Path(right_path).stem}.{DEFAULT_EXTENSION}"
+    )
     apply_lr(
         transformer=transformer_,
         left_path=left_path,
         right_path=right_path,
         out_path=(
-            Path(left_path).parent
-            / f"{Path(left_path).stem}-{Path(right_path).stem}.{DEFAULT_EXTENSION}"
+            Path(left_path).parent / filename_default
             if out_path == Path("")
-            else out_path
+            else out_path / filename_default if out_path.is_dir() else out_path
         ),
         radius=float(radius) if radius not in ["auto", "max"] else radius,  # type: ignore
         size_output=tuple(map(int, size.split("x"))),  # type: ignore
