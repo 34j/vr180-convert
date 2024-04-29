@@ -7,11 +7,13 @@ from typing import Literal, Sequence
 import cv2 as cv
 import numpy as np
 from numpy.typing import NDArray
+from quaternion import quaternion
 
 from .transformer import (
     DenormalizeTransformer,
     NormalizeTransformer,
     TransformerBase,
+    equidistant_to_3d,
     get_radius,
 )
 
@@ -55,6 +57,140 @@ def get_map(
     ).transform(xmap, ymap)
     xmap, ymap = xmap.astype(np.float32), ymap.astype(np.float32)
     return xmap, ymap
+
+
+def get_radius_smart(
+    radius: float | Literal["auto", "max"],
+    images: Sequence[NDArray],
+) -> float:
+    """
+    Get radius smartly.
+
+    Parameters
+    ----------
+    radius : float | Literal[&quot;auto&quot;, &quot;max&quot;]
+        The strategy to get the radius.
+    images : Sequence[NDArray]
+        Images to be processed.
+
+    Returns
+    -------
+    float
+        The radius.
+
+    """
+    if radius == "auto":
+        radius_candidates = [get_radius(image) for image in images]
+        radius_ = max(radius_candidates)
+    elif radius == "max":
+        radius_ = min(images[0].shape[0] / 2, images[0].shape[1] / 2)
+    else:
+        radius_ = radius
+    LOG.info(f"Radius: {radius_}, strategy: {radius}, image shape: {images[0].shape}")
+    return radius_
+
+
+def rotation_match(
+    points_to_be_rotated: NDArray,
+    points: NDArray,
+) -> quaternion:
+    """
+    Match the rotation of two sets of 3d points.
+
+    Parameters
+    ----------
+    points_to_be_rotated : _type_
+        Array of shape (..., 3)
+    points : NDArray
+        Array of shape (..., 3)
+
+    Returns
+    -------
+    quaternion
+        quaternion that minimizes the distance between the rotated
+        `points_to_be_rotated` and `points`.
+
+    References
+    ----------
+    https://lisyarus.github.io/blog/posts/3d-shape-matching-with-quaternions.html
+
+    """
+    # 3d point matching
+    # https://lisyarus.github.io/blog/posts/3d-shape-matching-with-quaternions.html
+    # E := ||Ra_k - b_k||^2, Ra := qaq^{-1}
+    # E = ||qa_kq^{-1} - b_k||^2 = ||qa_k - b_kq||^2
+
+    # extend to 4d
+    a = np.concatenate(
+        [points_to_be_rotated, np.zeros_like(points_to_be_rotated[..., :1])], axis=1
+    )
+    ax, ay, az, aw = a[..., 0], a[..., 1], a[..., 2], a[..., 3]
+    b = np.concatenate([points, np.zeros_like(points[..., :1])], axis=1)
+    bx, by, bz, bw = b[..., 0], b[..., 1], b[..., 2], b[..., 3]
+
+    right_mult_matrix = np.array(
+        [[aw, -az, ay, -ax], [az, aw, -ax, -ay], [-ay, ax, aw, -az], [ax, ay, az, aw]]
+    )
+    left_mult_matrix = np.array(
+        [[bw, bz, -by, -bx], [-bz, bw, bx, -by], [by, -bx, bw, -bz], [bx, by, bz, bw]]
+    )
+    S = right_mult_matrix - left_mult_matrix
+    B = np.einsum("kji,kjl->il", S, S)
+    eigenvalues, eigenvectors = np.linalg.eig(B)
+    q = eigenvectors[:, np.argmin(eigenvalues)]
+    return quaternion(q)
+
+
+def match_lr(
+    decoder: TransformerBase,
+    points_l: Sequence[tuple[float, float]],
+    points_r: Sequence[tuple[float, float]],
+    in_paths: Sequence[Path | str],
+    *,
+    radius: float | Literal["auto", "max"] = "auto",
+) -> quaternion:
+    """
+    Get the quaternion that minimizes the distance between the rotated points.
+
+    Parameters
+    ----------
+    decoder : TransformerBase
+        Transformer to be applied. Must implement inverse_transform().
+    points_l : tuple[tuple[float, float], ...]
+        The points in the left image.
+    points_r : tuple[tuple[float, float], ...]
+        The points in the right image.
+    in_paths : Sequence[Path  |  str]
+        Input image paths.
+    radius : float | Literal[&quot;auto&quot;, &quot;max&quot], optional
+        The strategy to get the radius.
+
+    Returns
+    -------
+    quaternion
+        The quaternion to be applied to the left points.
+
+    Raises
+    ------
+    ValueError
+        If the number of points is not the same.
+
+    """
+    if len(points_l) != len(points_r):
+        raise ValueError("The number of points must be the same.")
+    points_ = np.concatenate([points_l, points_r], axis=0)
+    images = [cv.imread(Path(from_path).as_posix()) for from_path in in_paths]
+    xmap, ymap = points_[:, 0], points_[:, 1]
+    xmap, ymap = (
+        decoder
+        * DenormalizeTransformer(
+            scale=(radius, radius),
+            center=(images[0].shape[1] // 2, images[0].shape[0] // 2),
+        )
+    ).transform(xmap, ymap)
+    v = equidistant_to_3d(xmap, ymap)
+    vl, vr = v[: len(points_l)], v[len(points_l) :]
+    return rotation_match(vl, vr)
 
 
 def apply(
@@ -103,14 +239,7 @@ def apply(
     del in_paths, out_paths
 
     images = [cv.imread(Path(from_path).as_posix()) for from_path in in_paths_]
-    if radius == "auto":
-        radius_candidates = [get_radius(image) for image in images]
-        radius_ = max(radius_candidates)
-    elif radius == "max":
-        radius_ = min(images[0].shape[0] / 2, images[0].shape[1] / 2)
-    else:
-        radius_ = radius
-    LOG.info(f"Radius: {radius_}, strategy: {radius}, image shape: {images[0].shape}")
+    radius_ = get_radius_smart(radius, images)
 
     xmap, ymap = get_map(
         radius=radius_,
@@ -209,7 +338,7 @@ def apply_lr(
         # https://en.wikipedia.org/wiki/Anaglyph_3D
         # 3d glass -> L: red filter, R: blue filter
         # L: blue layer, R: red layer
-        colors = [(0, 0, 255), (255, 0, 0)]
+        colors = [(0, 128, 255), (255, 128, 0)]
         combine = np.mean(images[0], axis=-1)[..., None] * np.array(colors[0]).reshape(
             [1] * (images[0].ndim - 1) + [3]
         ) + (

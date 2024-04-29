@@ -13,9 +13,13 @@ from strenum import StrEnum
 from typing_extensions import Annotated
 
 from vr180_convert.transformer import *  # noqa
-from vr180_convert.transformer import EquirectangularEncoder, FisheyeDecoder
+from vr180_convert.transformer import (
+    EquirectangularEncoder,
+    Euclidean3DRotator,
+    FisheyeDecoder,
+)
 
-from .remapper import apply, apply_lr
+from .remapper import apply, apply_lr, match_lr
 
 LOG = getLogger(__name__)
 DEFAULT_EXTENSION = "png"
@@ -75,8 +79,8 @@ def lr(
         ),
     ] = Path(""),
     size: Annotated[
-        str, typer.Option(help="Output image size, defaults to 2048x2048")
-    ] = "2048x2048",
+        str, typer.Option(help="Output image size, defaults to 4096x4096")
+    ] = "4096x4096",
     interpolation: Annotated[
         _InterpolationFlags,
         typer.Option(help="Interpolation method, defaults to lanczos4"),
@@ -100,14 +104,35 @@ def lr(
     ] = 0.0,
     swap: Annotated[bool, typer.Option(help="Swap left and right images")] = False,
     name_unique: Annotated[bool, typer.Option(help="Make output name unique")] = False,
+    automatch: Annotated[
+        str, typer.Option(help="Automatch left and right images")
+    ] = "",
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
-    # evaluate transformer
+    # evaluate automatch
     transformer_: Any
-    if transformer == "":
-        transformer_ = EquirectangularEncoder() * FisheyeDecoder("equidistant")
+    if automatch != "":
+        automatch_ = [tuple(chunk.split(",")) for chunk in automatch.split(";")]
+        q = match_lr(
+            FisheyeDecoder("equidistant"),
+            automatch_[:2],  # type: ignore
+            automatch_[2:],  # type: ignore
+            radius=float(radius) if radius not in ["auto", "max"] else radius,  # type: ignore
+            in_paths=[left_path, right_path],
+        )
+        LOG.info(f"Automatched quaternion: {q}")
+        transformer_ = (
+            EquirectangularEncoder()
+            * Euclidean3DRotator(q)
+            * FisheyeDecoder("equidistant"),
+            EquirectangularEncoder() * FisheyeDecoder("equidistant"),
+        )
     else:
-        transformer_ = eval(transformer)  # noqa
+        # evaluate transformer
+        if transformer == "":
+            transformer_ = EquirectangularEncoder() * FisheyeDecoder("equidistant")
+        else:
+            transformer_ = eval(transformer)  # noqa
 
     if swap:
         left_path, right_path = right_path, left_path
@@ -203,8 +228,10 @@ def lr(
         if name_unique
         else ""
     )
-    filename_default = f"{Path(left_path).stem}-"
-    f"{Path(right_path).stem}{name_unique_content}.{DEFAULT_EXTENSION}"
+    filename_default = (
+        f"{Path(left_path).stem}-"
+        + f"{Path(right_path).stem}{name_unique_content}.{DEFAULT_EXTENSION}"
+    )
     apply_lr(
         transformer=transformer_,
         left_path=left_path,
@@ -236,8 +263,8 @@ def s(
         ),
     ] = Path(""),
     size: Annotated[
-        str, typer.Option(help="Output image size, defaults to 2048x2048")
-    ] = "2048x2048",
+        str, typer.Option(help="Output image size, defaults to 4096x4096")
+    ] = "4096x4096",
     interpolation: Annotated[
         _InterpolationFlags,
         typer.Option(help="Interpolation method, defaults to lanczos4"),
