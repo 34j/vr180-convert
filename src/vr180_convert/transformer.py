@@ -145,9 +145,9 @@ class NormalizeTransformer(TransformerBase):
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
         center = self.center or (x.shape[1] / 2, x.shape[0] / 2)
-        scale = self.scale or (x.shape[1], x.shape[0])
-        x = (x - center[0]) / scale[0] * 2
-        y = (y - center[1]) / scale[1] * 2
+        scale = self.scale or min(x.shape[1], x.shape[0])
+        x = (x - center[0]) / scale * 2
+        y = (y - center[1]) / scale * 2
         return x, y
 
     def inverse_transform(
@@ -285,7 +285,10 @@ class FisheyeEncoder(PolarRollTransformer):
         elif self.mapping_type == "orthographic":
             return np.arcsin(theta), roll
         else:
-            raise ValueError(f"Unknown mapping type: {self.mapping_type}")
+            raise ValueError(
+                f"Unknown mapping type: {self.mapping_type}, "
+                "should be one of 'rectilinear', 'stereographic', 'equidistant', 'equisolid', 'orthographic'."
+            )
 
     def inverse_transform_polar(
         self, theta: NDArray, roll: NDArray, **kwargs: Any
@@ -302,7 +305,10 @@ class FisheyeEncoder(PolarRollTransformer):
         elif self.mapping_type == "orthographic":
             return np.sin(theta), roll
         else:
-            raise ValueError(f"Unknown mapping type: {self.mapping_type}")
+            raise ValueError(
+                f"Unknown mapping type: {self.mapping_type}, "
+                "should be one of 'rectilinear', 'stereographic', 'equidistant', 'equisolid', 'orthographic'."
+            )
 
 
 class InverseTransformer(TransformerBase):
@@ -366,15 +372,15 @@ class ZoomTransformer(TransformerBase):
     def transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
-        x = x * self.scale
-        y = y * self.scale
+        x = x / self.scale
+        y = y / self.scale
         return x, y
 
     def inverse_transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
-        x = x / self.scale
-        y = y / self.scale
+        x = x * self.scale
+        y = y * self.scale
         return x, y
 
 
