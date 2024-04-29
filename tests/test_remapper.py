@@ -4,7 +4,13 @@ from typing import Literal
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from quaternion import from_euler_angles
+from quaternion import (
+    allclose,
+    from_euler_angles,
+    from_rotation_vector,
+    quaternion,
+    rotate_vectors,
+)
 
 from vr180_convert import (
     EquirectangularEncoder,
@@ -14,6 +20,7 @@ from vr180_convert import (
     apply,
     apply_lr,
 )
+from vr180_convert.remapper import rotation_match
 from vr180_convert.testing import generate_test_image
 from vr180_convert.transformer import (
     PolynomialScaler,
@@ -103,3 +110,18 @@ def test_equidistant_3d():
     x = np.random.rand(101, 100)
     y = np.random.rand(101, 100)
     assert_allclose(equidistant_from_3d(equidistant_to_3d(x, y)), (x, y))
+
+
+@pytest.mark.parametrize(
+    "rotation",
+    [
+        from_rotation_vector([0.1, 0.2, 0.3]),
+    ],
+)
+def test_rotation_match(rotation: quaternion) -> None:
+    random_points = np.random.rand(100, 3)
+    random_points_rotated = rotate_vectors(rotation, random_points)
+    rotation_est = rotation_match(random_points, random_points_rotated)
+    assert allclose(rotation, rotation_est, atol=1e-3) or allclose(
+        -rotation, rotation_est, atol=1e-3
+    )

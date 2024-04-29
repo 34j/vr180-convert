@@ -7,7 +7,7 @@ from typing import Literal, Sequence
 import cv2 as cv
 import numpy as np
 from numpy.typing import NDArray
-from quaternion import quaternion
+from quaternion import as_quat_array, quaternion
 
 from .transformer import (
     DenormalizeTransformer,
@@ -138,7 +138,7 @@ def rotation_match(
     B = np.einsum("jik,jlk->il", S, S)
     eigenvalues, eigenvectors = np.linalg.eig(B)
     q = eigenvectors[:, np.argmin(eigenvalues)]
-    return quaternion(*q)
+    return as_quat_array([q[..., 3], q[..., 0], q[..., 1], q[..., 2]])
 
 
 def match_lr(
