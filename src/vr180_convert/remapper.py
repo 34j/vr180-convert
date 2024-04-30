@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from logging import getLogger
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Literal, Sequence
 
 import cv2 as cv
@@ -310,6 +311,16 @@ def apply_lr(
 
     """
     images: Sequence[NDArray[np.uint8]]
+
+    if left_path == right_path:
+        image = cv.imread(Path(left_path).as_posix())
+        # divide left and right
+        left_path = NamedTemporaryFile(suffix=".left.jpg").name
+        right_path = NamedTemporaryFile(suffix=".right.jpg").name
+        images = [image[:, : image.shape[1] // 2], image[:, image.shape[1] // 2 :]]
+        cv.imwrite(left_path, images[0])
+        cv.imwrite(right_path, images[1])
+
     if isinstance(transformer, tuple):
         images = [
             apply(
