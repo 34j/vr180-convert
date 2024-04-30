@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from logging import getLogger
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from typing import Literal, Sequence
 
 import cv2 as cv
@@ -198,7 +197,7 @@ def match_lr(
 def apply(
     transformer: TransformerBase,
     *,
-    in_paths: Sequence[Path | str] | Path | str,
+    in_paths: Sequence[Path | str | NDArray] | Path | str | NDArray,
     out_paths: Sequence[Path | str] | None | Path | str = None,
     size_output: tuple[int, int] = (2048, 2048),
     interpolation: int = cv.INTER_LANCZOS4,
@@ -236,11 +235,20 @@ def apply(
 
     """
     # note that str is Sequence
-    in_paths_ = [in_paths] if isinstance(in_paths, (str, Path)) else in_paths
+    in_paths_ = (
+        [in_paths] if isinstance(in_paths, (str, Path, np.ndarray)) else in_paths
+    )
     out_paths_ = [out_paths] if isinstance(out_paths, (str, Path)) else out_paths
     del in_paths, out_paths
 
-    images = [cv.imread(Path(from_path).as_posix()) for from_path in in_paths_]
+    images = [
+        (
+            cv.imread(Path(from_path).as_posix())
+            if isinstance(from_path, (str, Path))
+            else from_path
+        )
+        for from_path in in_paths_
+    ]
     radius_ = get_radius_smart(radius, images)
 
     xmap, ymap = get_map(
@@ -271,8 +279,8 @@ def apply(
 def apply_lr(
     transformer: TransformerBase | tuple[TransformerBase, TransformerBase],
     *,
-    left_path: Path | str,
-    right_path: Path | str,
+    left_path: Path | str | NDArray,
+    right_path: Path | str | NDArray,
     out_path: Path | str,
     size_output: tuple[int, int] = (2048, 2048),
     interpolation: int = cv.INTER_LANCZOS4,
@@ -310,16 +318,17 @@ def apply_lr(
         Whether to merge the images mainly for calibration, by default False
 
     """
-    images: Sequence[NDArray[np.uint8]]
-
-    if left_path == right_path:
+    if (
+        isinstance(left_path, (str, Path))
+        and isinstance(right_path, (str, Path))
+        and left_path == right_path
+    ):
         image = cv.imread(Path(left_path).as_posix())
         # divide left and right
-        left_path = NamedTemporaryFile(suffix=".left.jpg").name
-        right_path = NamedTemporaryFile(suffix=".right.jpg").name
-        images = [image[:, : image.shape[1] // 2], image[:, image.shape[1] // 2 :]]
-        cv.imwrite(left_path, images[0])
-        cv.imwrite(right_path, images[1])
+        left_path = image[:, : image.shape[1] // 2]
+        right_path = image[:, image.shape[1] // 2 :]
+
+    images: Sequence[NDArray[np.uint8]]
 
     if isinstance(transformer, tuple):
         images = [
