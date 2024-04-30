@@ -166,12 +166,12 @@ This program cannot read RAW files. To deal with white-outs, etc., it is recomme
 ### Example of processing in Photoshop
 
 1. Open one of the images.
-2. Add each image as Smart Objects and make **minimal** corrections to match the exposure etc.
-3. Make each Smart Object into Smart Objects again and do any image-dependent processing, such as removing the background.
-4. Make both images into a single Smart Object and process them as a whole.
+2. Add each image as Smart Objects (`LRaw`, `RRaw`) and make **minimal** corrections to match the exposure using `Camera Raw Filter`.
+3. Make each Smart Object into Smart Objects (`L`, `R`) again and do any image-dependent processing, such as removing the background.
+4. Make both images into a single Smart Object (`P`) and process them as a whole.
 5. Delete the background image.
 6. Export as a PNG file.
-7. Hide the other Smart Object (created in step 3) in the Smart Object (created in step 4) and save, then export as a PNG file.
+7. Hide the other Smart Object (`L` or `R`) (created in step 3) in the Smart Object `P` (created in step 4) and save the Smart Object `P`, then export as a PNG file.
 
 ## Contributors ✨
 
