@@ -3,7 +3,7 @@ from enum import auto
 from hashlib import sha256
 from logging import DEBUG, INFO, basicConfig, getLogger
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import cv2 as cv
 import typer
@@ -65,26 +65,32 @@ class _BorderTypes(StrEnum):
     BORDER_ISOLATED = auto()
 
 
-def _get_position_gui(image_path: Path) -> tuple[int, int]:
+def _get_position_gui(image_paths: Sequence[Path]) -> list[tuple[int, int]]:
     """Get the position of the GUI window."""
     window_name = "Select position"
     cv.namedWindow(window_name, cv.WND_PROP_FULLSCREEN)
     cv.setWindowProperty(window_name, cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
-    cv.imshow(window_name, cv.imread(image_path.as_posix()))
 
-    x_, y_ = 0, 0
+    i = 0
+    res = []
 
     def on_mouse(event: int, x: int, y: int, flags: int, param: Any) -> None:
-        nonlocal x_, y_
+        nonlocal res, i
         if event == cv.EVENT_LBUTTONDOWN:
-            x_, y_ = x, y
-            cv.destroyWindow(window_name)
+            res.append((x, y))
+            LOG.info(f"Position {i}: ({x}, {y})")
 
     cv.setMouseCallback(window_name, on_mouse)
-    cv.waitKey(0)
+    cv.imshow(window_name, cv.imread(image_paths[i].as_posix()))
+    while True:
+        cv.waitKey(10)
+        if len(res) == i + 1:
+            i += 1
+            if i == len(image_paths):
+                break
+            cv.imshow(window_name, cv.imread(image_paths[i].as_posix()))
     cv.destroyAllWindows()
-    LOG.info(f"{x_}, {y_}")
-    return x_, y_
+    return res
 
 
 @app.command()
@@ -127,7 +133,7 @@ def lr(
     swap: Annotated[bool, typer.Option(help="Swap left and right images")] = False,
     name_unique: Annotated[bool, typer.Option(help="Make output name unique")] = False,
     automatch: Annotated[
-        str, typer.Option(help="Automatch left and right images")
+        str, typer.Option(help="Automatch left and right images. If 'gui', use GUI.")
     ] = "",
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
@@ -203,13 +209,13 @@ def lr(
     # evaluate automatch
     transformer_: Any
     if automatch != "":
-        if automatch == "auto":
-            automatch_ = [
-                _get_position_gui(left_path),
-                _get_position_gui(right_path),
-                _get_position_gui(left_path),
-                _get_position_gui(right_path),
-            ]
+        if automatch == "gui":
+            automatch_ = _get_position_gui(
+                [left_path, right_path, left_path, right_path]
+            )
+            LOG.info(
+                f"Automatched position: {';'.join([','.join(map(str, p)) for p in automatch_])}"
+            )
         else:
             automatch_ = [tuple(chunk.split(",")) for chunk in automatch.split(";")]  # type: ignore
         q = match_lr(
