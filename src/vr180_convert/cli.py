@@ -17,6 +17,8 @@ from vr180_convert.transformer import (
     EquirectangularEncoder,
     Euclidean3DRotator,
     FisheyeDecoder,
+    MultiTransformer,
+    TransformerBase,
 )
 
 from .remapper import apply, apply_lr, match_lr
@@ -120,7 +122,7 @@ def lr(
     radius: Annotated[
         str, typer.Option(help="Radius of the fisheye image, defaults to 'auto'")
     ] = "auto",
-    merge: Annotated[bool, typer.Option(help="Merge left and right images")] = False,
+    merge: Annotated[bool, typer.Option(help="Export as an anaglyph")] = False,
     autosearch_timestamp_calib_r_earlier_l: Annotated[
         float,
         typer.Option(
@@ -130,10 +132,16 @@ def lr(
             "(right timestamp -= autosearch_timestamp_calib_r_earlier_l) (in seconds)",
         ),
     ] = 0.0,
-    swap: Annotated[bool, typer.Option(help="Swap left and right images")] = False,
+    swap: Annotated[
+        bool,
+        typer.Option(help="Swap left and right images as well as transformer, etc."),
+    ] = False,
     name_unique: Annotated[bool, typer.Option(help="Make output name unique")] = False,
     automatch: Annotated[
-        str, typer.Option(help="Automatch left and right images. If 'gui', use GUI.")
+        str,
+        typer.Option(
+            help='Calibrate rotation. e.g. "0,0;0,0;1,1;1,1". If "gui", use GUI'
+        ),
     ] = "",
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
@@ -207,8 +215,28 @@ def lr(
     )
 
     # evaluate automatch
-    transformer_: Any
+    transformer_: TransformerBase | tuple[TransformerBase, TransformerBase]
+    # evaluate transformer
+    if transformer == "":
+        transformer_ = EquirectangularEncoder() * FisheyeDecoder("equidistant")
+    else:
+        transformer_ = eval(transformer)  # noqa
     if automatch != "":
+        if not isinstance(transformer_, MultiTransformer):
+            raise ValueError("Automatch requires MultiTransformer")
+
+        transformer_is_encoder = [
+            x.__class__.__name__.endswith("Encoder") for x in transformer_.transformers
+        ]
+        transformer_first_encoder_index = transformer_is_encoder.index(True)
+        transformer_until_encoder = MultiTransformer(
+            transformer_.transformers[: transformer_first_encoder_index + 1]
+        )
+        transformer_after_encoder = MultiTransformer(
+            transformer_.transformers[transformer_first_encoder_index + 1 :]
+        )
+        LOG.debug(f"{transformer_until_encoder=}, {transformer_after_encoder=}")
+
         if automatch == "gui":
             automatch_ = _get_position_gui(
                 [left_path, right_path, left_path, right_path]
@@ -218,6 +246,7 @@ def lr(
             )
         else:
             automatch_ = [tuple(chunk.split(",")) for chunk in automatch.split(";")]  # type: ignore
+
         q = match_lr(
             FisheyeDecoder("equidistant"),
             # odd
@@ -229,17 +258,12 @@ def lr(
         )
         LOG.info(f"Automatched quaternion: {q}")
         transformer_ = (
-            EquirectangularEncoder()
+            transformer_until_encoder
             * Euclidean3DRotator(q)
-            * FisheyeDecoder("equidistant"),
-            EquirectangularEncoder() * FisheyeDecoder("equidistant"),
+            * transformer_after_encoder,
+            transformer_,
         )
-    else:
-        # evaluate transformer
-        if transformer == "":
-            transformer_ = EquirectangularEncoder() * FisheyeDecoder("equidistant")
-        else:
-            transformer_ = eval(transformer)  # noqa
+        LOG.info(f"Automatched transformer: {transformer_}")
 
     if swap:
         if isinstance(transformer_, tuple):
