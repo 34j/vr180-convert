@@ -36,7 +36,7 @@ _TEST_IMAGE_PATH = _TEST_DIR / "test.jpg"
 @pytest.fixture(scope="session", autouse=True)
 def generate_image():
     _TEST_DIR.mkdir(exist_ok=True)
-    generate_test_image(2048, _TEST_IMAGE_PATH)
+    generate_test_image(256, _TEST_IMAGE_PATH)
 
 
 @pytest.mark.parametrize(
@@ -70,6 +70,7 @@ def test_apply(
         in_paths=_TEST_IMAGE_PATH,
         out_paths=_TEST_DIR / f"test.format.{format}.jpg",
         radius="max",
+        size_output=(256, 256),
     )
 
 
@@ -86,6 +87,7 @@ def test_transformer(transformer: TransformerBase) -> None:
         in_paths=_TEST_IMAGE_PATH,
         out_paths=_TEST_DIR / f"test.transformer.{transformer.__class__.__name__}.jpg",
         radius="max",
+        size_output=(256, 256),
     )
 
 
@@ -103,6 +105,7 @@ def test_lr(transformer: TransformerBase) -> None:
         right_path=_TEST_IMAGE_PATH,
         out_path=_TEST_DIR / f"test.lr.{transformer.__class__.__name__}.jpg",
         radius="max",
+        size_output=(256, 256),
     )
 
 
