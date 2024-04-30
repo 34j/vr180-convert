@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from typing import Any, Literal, Sequence
+from typing import Any, Generic, Literal, Sequence, TypeVar
 
 import attrs
 import numpy as np
@@ -80,6 +80,9 @@ class TransformerBase(
         return MultiTransformer(transformers=[self, other])
 
 
+T = TypeVar("T", bound=TransformerBase)
+
+
 @attrs.define()
 class MultiTransformer(TransformerBase):
     """A transformer that applies multiple transformers in sequence."""
@@ -138,14 +141,23 @@ def get_radius(input: NDArray, *, threshold: int = 10) -> float:
 
 @attrs.define()
 class NormalizeTransformer(TransformerBase):
+    """Normalize the coordinates to [-1, 1]."""
+
     center: tuple[float, float] | None = None
-    scale: tuple[float, float] | None = None
+    """The center of the image. If None, the center is the center of the image."""
+    scale: tuple[float, float] | Literal["min", "max"] | None = None
+    """The scale of the image. If "min" or None, the scale is the minimum of the width and height.
+    If "max", the scale is the maximum of the width and height."""
 
     def transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
         center = self.center or (x.shape[1] / 2, x.shape[0] / 2)
-        scale = self.scale or min(x.shape[1], x.shape[0])
+        scale = (
+            min(x.shape[1], x.shape[0])
+            if self.scale in ["min", None]
+            else max(x.shape[1], x.shape[0]) if self.scale == "max" else self.scale
+        )
         x = (x - center[0]) / scale * 2
         y = (y - center[1]) / scale * 2
         return x, y
@@ -154,7 +166,11 @@ class NormalizeTransformer(TransformerBase):
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
         center = self.center or (x.shape[1] / 2, x.shape[0] / 2)
-        scale = self.scale or (x.shape[1] / 2, x.shape[0] / 2)
+        scale = (
+            min(x.shape[1], x.shape[0])
+            if self.scale in ["min", None]
+            else max(x.shape[1], x.shape[0]) if self.scale == "max" else self.scale
+        )
         x = x * scale[0] + center[0]
         y = y * scale[1] + center[1]
         return x, y
@@ -170,8 +186,12 @@ class NormalizeTransformer(TransformerBase):
 
 @attrs.define()
 class DenormalizeTransformer(TransformerBase):
+    """Denormalize the coordinates from [-1, 1] to the original image size."""
+
     scale: tuple[float, float]
+    """The scale of the image. Recommended to be the half of the width and height of the result image."""
     center: tuple[float, float]
+    """The center of the image. Recommended to be the center of the result image."""
 
     def transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
@@ -194,6 +214,8 @@ class DenormalizeTransformer(TransformerBase):
 
 @attrs.define()
 class PolarRollTransformer(TransformerBase):
+    """Transform using polar coordinates."""
+
     @abstractmethod
     def transform_polar(
         self, theta: NDArray, roll: NDArray, **kwargs: Any
@@ -265,6 +287,8 @@ class PolarRollTransformer(TransformerBase):
 
 @attrs.define()
 class FisheyeEncoder(PolarRollTransformer):
+    """Encodes fisheye image."""
+
     mapping_type: Literal[
         "rectilinear", "stereographic", "equidistant", "equisolid", "orthographic"
     ]
@@ -311,9 +335,12 @@ class FisheyeEncoder(PolarRollTransformer):
             )
 
 
-class InverseTransformer(TransformerBase):
-    def __init__(self, transformer: TransformerBase):
-        self.transformer = transformer
+@attrs.define()
+class InverseTransformer(TransformerBase, Generic[T]):
+    """Transformer that calls inverse_transform() in transform() and vice versa."""
+
+    transformer: T
+    """The transformer to be inverted."""
 
     def transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
@@ -330,7 +357,7 @@ def FisheyeDecoder(
     mapping_type: Literal[
         "rectilinear", "stereographic", "equidistant", "equisolid", "orthographic"
     ]
-) -> InverseTransformer:
+) -> InverseTransformer[FisheyeEncoder]:
     """
     Decodes fisheye image.
 
@@ -350,7 +377,11 @@ def FisheyeDecoder(
 
 @attrs.define()
 class PolynomialScaler(PolarRollTransformer):
+    """Scale the polar coordinates using polynomial."""
+
     coefs_reverse: Sequence[float] = [0, 1]
+    """The coefficients of the polynomial in reverse order.
+    [0, 1] means y = 0 + 1 * x."""
 
     def transform_polar(
         self, theta: NDArray, roll: NDArray, **kwargs: Any
@@ -367,7 +398,10 @@ class PolynomialScaler(PolarRollTransformer):
 
 @attrs.define()
 class ZoomTransformer(TransformerBase):
+    """Zoom the image."""
+
     scale: float
+    """The zoom scale."""
 
     def transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
@@ -436,7 +470,10 @@ def equidistant_from_3d(v: NDArray) -> tuple[NDArray, NDArray]:
 
 @attrs.define()
 class EquirectangularEncoder(TransformerBase):
+    """Encodes equirectangular image."""
+
     is_latitude_y: bool = True
+    """Whether latitude is encoded in y axis."""
 
     def transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
@@ -471,14 +508,13 @@ class EquirectangularEncoder(TransformerBase):
     def inverse_transform(
         self, x: NDArray, y: NDArray, **kwargs: Any
     ) -> tuple[NDArray, NDArray]:
+        v = equidistant_to_3d(x, y)
         if self.is_latitude_y:
-            v = equidistant_to_3d(x, y)
             theta_lat = np.arcsin(v[..., 1])
             phi_lon = np.arctan2(v[..., 0], v[..., 2])
             x = phi_lon / (np.pi / 2)
             y = theta_lat / (np.pi / 2)
         else:
-            v = equidistant_to_3d(x, y)
             theta_lat = np.arcsin(v[..., 0])
             phi_lon = np.arctan2(v[..., 1], v[..., 2])
             x = theta_lat / (np.pi / 2)
@@ -486,14 +522,68 @@ class EquirectangularEncoder(TransformerBase):
         return x, y
 
 
+def EquirectangularDecoder(
+    is_latitude_y: bool = True,
+) -> InverseTransformer[EquirectangularEncoder]:
+    """
+    Decodes equirectangular image.
+
+    Parameters
+    ----------
+    is_latitude_y : bool, optional
+        Whether latitude is encoded in y axis, by default True
+
+    Returns
+    -------
+    InverseTransformer[EquirectangularEncoder]
+        The equirectangular decoder.
+
+    """
+    return InverseTransformer(EquirectangularEncoder(is_latitude_y))
+
+
 @attrs.define()
 class Euclidean3DTransformer(TransformerBase):
+    """Transform as 3D unit vector."""
+
     @abstractmethod
     def transform_v(self, v: NDArray) -> NDArray:
+        """
+        Transform 3D unit vector.
+
+        Parameters
+        ----------
+        v : NDArray
+            The 3D unit vector.
+            z axis is forward, x axis is right, y axis is up.
+
+        Returns
+        -------
+        NDArray
+            The transformed 3D unit vector.
+            z axis is forward, x axis is right, y axis is up.
+
+        """
         pass
 
     @abstractmethod
     def inverse_transform_v(self, v: NDArray) -> NDArray:
+        """
+        Inverse transform 3D unit vector.
+
+        Parameters
+        ----------
+        v : NDArray
+            The 3D unit vector.
+            z axis is forward, x axis is right, y axis is up.
+
+        Returns
+        -------
+        NDArray
+            The inverse transformed 3D unit vector.
+            z axis is forward, x axis is right, y axis is up.
+
+        """
         pass
 
     def transform(
@@ -515,7 +605,10 @@ class Euclidean3DTransformer(TransformerBase):
 
 @attrs.define()
 class Euclidean3DRotator(Euclidean3DTransformer):
+    """Rotate as 3D unit vector."""
+
     rotation: quaternion
+    """The rotation quaternion."""
 
     def transform_v(self, v: NDArray) -> NDArray:
         return rotate_vectors(self.rotation, v)
