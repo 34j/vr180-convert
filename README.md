@@ -48,10 +48,6 @@ Install this via pip (or your favourite package manager):
 pipx install vr180-convert
 ```
 
-| Left                           | Right                           | Output                                               |
-| ------------------------------ | ------------------------------- | ---------------------------------------------------- |
-| ![left](docs/_static/test.jpg) | ![right](docs/_static/test.jpg) | ![output](docs/_static/test.lr.PolynomialScaler.jpg) |
-
 ## Usage
 
 Simply run the following command to convert 2 fisheye images to a SBS equirectangular VR180 image:
@@ -60,14 +56,42 @@ Simply run the following command to convert 2 fisheye images to a SBS equirectan
 v1c lr left.jpg right.jpg
 ```
 
+| left.jpg                       | right.jpg                       | Output                                               |
+| ------------------------------ | ------------------------------- | ---------------------------------------------------- |
+| ![left](docs/_static/test.jpg) | ![right](docs/_static/test.jpg) | ![output](docs/_static/test.lr.PolynomialScaler.jpg) |
+
+If left and right image paths are the same, the image is divided into two halves (left and right, SBS) and processed as if they were separate images.
+
+### Automatic image search
+
+If one of left or right image path is a directory, the program will search for the closest image (in terms of creation time) in the other directory.
+
+```shell
+v1c lr left.jpg right_dir
+v1c lr left_dir right.jpg
+```
+
+It is recommended to synchronize the clocks of the cameras before shooting. However, it can be adjusted by specifying `-ac` option.
+
+```shell
+v1c lr left.jpg right_dir -ac 1 # the clock of the right camera is 1 second faster / ahead
+v1c lr left_dir right.jpg -ac 1 # the clock of the right camera is 1 second faster / ahead
+```
+
+### Custom conversion model
+
 You can also specify the conversion model by adding Python code directly to the `--transformer` option:
 
 ```shell
 v1c lr left.jpg right.jpg ---transformer "EquirectangularEncoder() * Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * FisheyeDecoder("equidistant")"
 ```
 
+If tuple, the first transformer is applied to the left image and the second transformer is applied to the right image. If a single transformer is given, it is applied to both images.
+
 Please refer to the [API documentation](https://vr180-convert.readthedocs.io/) for the available transformers and their parameters.
 For `from_rotation_vector`, please refer to the [numpy-quaternion documentation](https://quaternion.readthedocs.io/en/latest/Package%20API%3A/quaternion/#from_rotation_vector).
+
+### Radius estimation
 
 The radius of the non-black area of the input image is assumed by counting black pixels by default, but it would be better to specify it manually to get stable results:
 
@@ -76,7 +100,39 @@ v1c lr left.jpg right.jpg --radius 1000
 v1c lr left.jpg right.jpg --radius max # min(width, height) / 2
 ```
 
+### Calibration
+
+Rotation matching using the least-squares method can be performed by clicking corresponding points that can be regarded as infinitely far away from the camera.
+
+```shell
+v1c lr left.jpg right.jpg --automatch gui
+```
+
+You can also specify the corresponding points manually:
+
+```shell
+v1c lr left.jpg right.jpg --automatch "0,0;0,0;1,1;1,1" # left_x1,left_y1;right_x1,right_y1;...
+```
+
+`--merge` option (which exports as [anaglyph](https://en.wikipedia.org/wiki/Anaglyph_3D) image) can be used to check if the calibration is successful by checking if the infinitely far points are overlapped.
+
+```shell
+v1c lr left.jpg right.jpg --automatch gui --merge
+```
+
+### Swap
+
+If the camera is mounted upside down, you can swap the left and right images for conversion:
+
+```shell
+v1c lr left.jpg right.jpg --swap
+```
+
+### Single image conversion
+
 To convert a single image, use `v1c s` instead.
+
+### Help
 
 For more information, please refer to the help or API documentation:
 
@@ -102,6 +158,20 @@ class MyTransformer(PolarRollTransformer):
 transformer = EquirectangularEncoder() * MyTransformer() * FisheyeDecoder("equidistant")
 apply_lr(transformer, left_path="left.jpg", right_path="right.jpg", out_path="output.jpg")
 ```
+
+## How to edit images
+
+This program cannot read RAW files. To deal with white-outs, etc., it is recommended to process the image in Photoshop or other software first.
+
+### Example of processing in Photoshop
+
+1. Open one of the images just for specifying the canvas size.
+2. Add each image as Smart Objects (`LRaw`, `RRaw`) and make **minimal** corrections to match the exposure using `Camera Raw Filter`.
+3. Make each Smart Object into Smart Objects (`L`, `R`) again and do any image-dependent processing, such as removing the background.
+4. Make both images into a single Smart Object (`P`) and process them as a whole.
+5. Delete the background image created in step 1.
+6. Export as a PNG file.
+7. Hide the other Smart Object (`L` or `R`) (created in step 3) in the Smart Object `P` (created in step 4) and save the Smart Object `P`, then export as a PNG file.
 
 ## Contributors ✨
 

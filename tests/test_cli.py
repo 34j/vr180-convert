@@ -12,7 +12,7 @@ runner = CliRunner()
 @pytest.fixture(scope="session", autouse=True)
 def generate_image():
     _TEST_DIR.mkdir(exist_ok=True)
-    generate_test_image(2048, _TEST_IMAGE_PATH)
+    generate_test_image(256, _TEST_IMAGE_PATH)
 
 
 def test_help():
@@ -36,6 +36,8 @@ def test_lr():
             "max",
             "--out-path",
             (_TEST_DIR / "test.cli.lr.jpg").as_posix(),
+            "--size",
+            "256x256",
         ],
     )
     assert result.exit_code == 0, result.stdout
@@ -55,6 +57,8 @@ def test_s():
             "max",
             "--out-path",
             (_TEST_DIR / "test.cli.s.jpg").as_posix(),
+            "--size",
+            "256x256",
         ],
     )
     assert result.exit_code == 0, result.stdout
