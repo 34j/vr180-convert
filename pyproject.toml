@@ -29,7 +29,7 @@ v1c = "vr180_convert.cli:app"
 [tool.poetry.dependencies]
 python = "^3.9"
 rich = ">=10"
-typer = {extras = ["all"], version = "^0.9.0"}
+typer = {extras = ["all"], version = "^0.12.0"}
 opencv-python = "^4.9.0.80"
 attrs = "^23.2.0"
 scikit-learn = "^1.4.2"
