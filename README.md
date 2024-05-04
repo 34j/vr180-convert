@@ -83,7 +83,7 @@ v1c lr left_dir right.jpg -ac 1 # the clock of the right camera is 1 second fast
 You can also specify the conversion model by adding Python code directly to the `--transformer` option:
 
 ```shell
-v1c lr left.jpg right.jpg ---transformer "EquirectangularEncoder() * Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * FisheyeDecoder("equidistant")"
+v1c lr left.jpg right.jpg --transformer 'EquirectangularEncoder() * Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * FisheyeDecoder("equidistant")'
 ```
 
 If tuple, the first transformer is applied to the left image and the second transformer is applied to the right image. If a single transformer is given, it is applied to both images.
@@ -122,7 +122,7 @@ v1c lr left.jpg right.jpg --automatch gui --merge
 
 ### Swap
 
-If the camera is mounted upside down, you can swap the left and right images for conversion:
+If the camera is mounted upside down, you can simply use the `--swap` option without changing the transformer or other parameters:
 
 ```shell
 v1c lr left.jpg right.jpg --swap
@@ -161,9 +161,11 @@ apply_lr(transformer, left_path="left.jpg", right_path="right.jpg", out_path="ou
 
 ## How to edit images
 
-This program cannot read RAW files. To deal with white-outs, etc., it is recommended to process the image in Photoshop or other software first.
+This program cannot read RAW files. To deal with white-outs, etc., it is required to process each image with a program such as Photoshop, etc.
 
-### Example of processing in Photoshop
+However, this is so exhaustive, so it is recommended to take the images with jpeg format, being careful not to overexpose the images, and convert them with this program, then use Lightroom or other software to adjust colors and exposure, etc.
+
+### Example of processing in Photoshop (Exquisite editing)
 
 1. Open one of the images just for specifying the canvas size.
 2. Add each image as Smart Objects (`LRaw`, `RRaw`) and make **minimal** corrections to match the exposure using `Camera Raw Filter`.
