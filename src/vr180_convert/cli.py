@@ -265,9 +265,9 @@ def lr(
         )
         LOG.info(f"Automatched transformer: {transformer_}")
 
-    if swap:
-        if isinstance(transformer_, tuple):
-            transformer_ = transformer_[1], transformer_[0]
+    # if swap:
+    #     if isinstance(transformer_, tuple) and automatch == "":
+    #         transformer_ = transformer_[1], transformer_[0]
 
     # apply transformer
     name_unique_content = (
