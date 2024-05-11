@@ -115,10 +115,10 @@ def lr(
         _InterpolationFlags,
         typer.Option(help="Interpolation method, defaults to lanczos4"),
     ] = _InterpolationFlags.INTER_LANCZOS4,  # type: ignore
-    boarder_mode: Annotated[
+    border_mode: Annotated[
         _BorderTypes, typer.Option(help="Border mode, defaults to constant")
     ] = _BorderTypes.BORDER_CONSTANT,  # type: ignore
-    boarder_value: int = 0,
+    border_value: int = 0,
     radius: Annotated[
         str, typer.Option(help="Radius of the fisheye image, defaults to 'auto'")
     ] = "auto",
@@ -265,9 +265,9 @@ def lr(
         )
         LOG.info(f"Automatched transformer: {transformer_}")
 
-    if swap:
-        if isinstance(transformer_, tuple):
-            transformer_ = transformer_[1], transformer_[0]
+    # if swap:
+    #     if isinstance(transformer_, tuple) and automatch == "":
+    #         transformer_ = transformer_[1], transformer_[0]
 
     # apply transformer
     name_unique_content = (
@@ -279,8 +279,8 @@ def lr(
                         transformer,
                         size,
                         interpolation,
-                        boarder_mode,
-                        str(boarder_value),
+                        border_mode,
+                        str(border_value),
                         radius,
                         str(merge),
                         str(autosearch_timestamp_calib_r_earlier_l),
@@ -308,8 +308,8 @@ def lr(
         radius=float(radius) if radius not in ["auto", "max"] else radius,  # type: ignore
         size_output=tuple(map(int, size.split("x"))),  # type: ignore
         interpolation=getattr(cv, interpolation.upper()),
-        boarder_mode=getattr(cv, boarder_mode.upper()),
-        boarder_value=boarder_value,
+        boarder_mode=getattr(cv, border_mode.upper()),
+        boarder_value=border_value,
         merge=merge,
     )
 
