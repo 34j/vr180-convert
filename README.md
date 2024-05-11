@@ -176,13 +176,15 @@ In anaglyph images,
 
 - The left eye is covered with a red film, so the portion for the left eye is shown in blue.
 - The right eye is covered with a blue film, so the portion for the right eye is shown in red.
--->
-
-|                     | Left                                 | Right                                |
-| ------------------- | ------------------------------------ | ------------------------------------ |
-| Subject Orientation | Right                                | Left                                 |
 | Film Color          | <span style="color:red">Red</span>   | <span style="color:blue">Blue</span> |
 | Anaglyph Color      | <span style="color:blue">Blue</span> | <span style="color:red">Red</span>   |
+-->
+
+|                     | Left                          | Right                         |
+| ------------------- | ----------------------------- | ----------------------------- |
+| Subject Orientation | Right                         | Left                          |
+| Film Color          | $${\color{red}\text{Red}}$$   | $${\color{blue}\text{Blue}}$$ |
+| Anaglyph Color      | $${\color{blue}\text{Blue}}$$ | $${\color{red}\text{Red}}$$   |
 
 - In a SBS image, the subject is oriented toward the center.
 
