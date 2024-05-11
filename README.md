@@ -62,6 +62,8 @@ v1c lr left.jpg right.jpg
 
 If left and right image paths are the same, the image is divided into two halves (left and right, SBS) and processed as if they were separate images.
 
+## Advanced usage
+
 ### Automatic image search
 
 If one of left or right image path is a directory, the program will search for the closest image (in terms of creation time) in the other directory.
@@ -77,19 +79,6 @@ It is recommended to synchronize the clocks of the cameras before shooting. Howe
 v1c lr left.jpg right_dir -ac 1 # the clock of the right camera is 1 second faster / ahead
 v1c lr left_dir right.jpg -ac 1 # the clock of the right camera is 1 second faster / ahead
 ```
-
-### Custom conversion model
-
-You can also specify the conversion model by adding Python code directly to the `--transformer` option:
-
-```shell
-v1c lr left.jpg right.jpg --transformer 'EquirectangularEncoder() * Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * FisheyeDecoder("equidistant")'
-```
-
-If tuple, the first transformer is applied to the left image and the second transformer is applied to the right image. If a single transformer is given, it is applied to both images.
-
-Please refer to the [API documentation](https://vr180-convert.readthedocs.io/) for the available transformers and their parameters.
-For `from_rotation_vector`, please refer to the [numpy-quaternion documentation](https://quaternion.readthedocs.io/en/latest/Package%20API%3A/quaternion/#from_rotation_vector).
 
 ### Radius estimation
 
@@ -114,6 +103,8 @@ You can also specify the corresponding points manually:
 v1c lr left.jpg right.jpg --automatch "0,0;0,0;1,1;1,1" # left_x1,left_y1;right_x1,right_y1;...
 ```
 
+### Anaglyph
+
 `--merge` option (which exports as [anaglyph](https://en.wikipedia.org/wiki/Anaglyph_3D) image) can be used to check if the calibration is successful by checking if the infinitely far points are overlapped.
 
 ```shell
@@ -127,6 +118,19 @@ If the camera is mounted upside down, you can simply use the `--swap` option wit
 ```shell
 v1c lr left.jpg right.jpg --swap
 ```
+
+### Custom conversion model
+
+You can also specify the conversion model by adding Python code directly to the `--transformer` option:
+
+```shell
+v1c lr left.jpg right.jpg --transformer 'EquirectangularEncoder() * Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * FisheyeDecoder("equidistant")'
+```
+
+If tuple, the first transformer is applied to the left image and the second transformer is applied to the right image. If a single transformer is given, it is applied to both images.
+
+Please refer to the [API documentation](https://vr180-convert.readthedocs.io/) for the available transformers and their parameters.
+For `from_rotation_vector`, please refer to the [numpy-quaternion documentation](https://quaternion.readthedocs.io/en/latest/Package%20API%3A/quaternion/#from_rotation_vector).
 
 ### Single image conversion
 
@@ -159,13 +163,36 @@ transformer = EquirectangularEncoder() * MyTransformer() * FisheyeDecoder("equid
 apply_lr(transformer, left_path="left.jpg", right_path="right.jpg", out_path="output.jpg")
 ```
 
-## How to edit images
+## Tips
 
-This program cannot read RAW files. To deal with white-outs, etc., it is required to process each image with a program such as Photoshop, etc.
+### How to determine which image is left or right
 
-However, this is so exhaustive, so it is recommended to take the images with jpeg format, being careful not to overexpose the images, and convert them with this program, then use Lightroom or other software to adjust colors and exposure, etc.
+<!--
+- In the left image, the subject faces more to the right.
+- In the right image, the subject faces more to the left.
+- In other words, in a SBS image, the subject is oriented toward the center.
 
-### Example of processing in Photoshop (Exquisite editing)
+In anaglyph images,
+
+- The left eye is covered with a red film, so the portion for the left eye is shown in blue.
+- The right eye is covered with a blue film, so the portion for the right eye is shown in red.
+-->
+
+|                     | Left                                 | Right                                |
+| ------------------- | ------------------------------------ | ------------------------------------ |
+| Subject Orientation | Right                                | Left                                 |
+| Film Color          | <span style="color:red">Red</span>   | <span style="color:blue">Blue</span> |
+| Anaglyph Color      | <span style="color:blue">Blue</span> | <span style="color:red">Red</span>   |
+
+- In a SBS image, the subject is oriented toward the center.
+
+### How to edit images
+
+This program cannot read RAW files. To deal with white-outs, etc., it is required to process each image with a program such as Photoshop, Lightroom, [RawTherapee](https://rawtherapee.com/downloads/), [Darktable](https://www.darktable.org/install/), etc.
+
+However, this is so exhaustive, so it is recommended to take the images with jpeg format, being careful not to overexpose the images, and convert them with this program, then use Lightroom, [RawTherapee](https://rawtherapee.com/downloads/), [Darktable](https://www.darktable.org/install/) or other software to adjust colors and exposure, etc.
+
+#### Example of processing in Photoshop (Exquisite editing)
 
 1. Open one of the images just for specifying the canvas size.
 2. Add each image as Smart Objects (`LRaw`, `RRaw`) and make **minimal** corrections to match the exposure using `Camera Raw Filter`.
