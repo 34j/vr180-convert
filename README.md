@@ -180,11 +180,11 @@ In anaglyph images,
 | Anaglyph Color      | <span style="color:blue">Blue</span> | <span style="color:red">Red</span>   |
 -->
 
-|                     | Left                          | Right                         |
-| ------------------- | ----------------------------- | ----------------------------- |
-| Subject Orientation | Right                         | Left                          |
-| Film Color          | $${\color{red}\text{Red}}$$   | $${\color{blue}\text{Blue}}$$ |
-| Anaglyph Color      | $${\color{blue}\text{Blue}}$$ | $${\color{red}\text{Red}}$$   |
+|                     | Left                        | Right                       |
+| ------------------- | --------------------------- | --------------------------- |
+| Subject Orientation | Right                       | Left                        |
+| Film Color          | ${\color{red}\text{Red}}$   | ${\color{blue}\text{Blue}}$ |
+| Anaglyph Color      | ${\color{blue}\text{Blue}}$ | ${\color{red}\text{Red}}$   |
 
 - In a SBS image, the subject is oriented toward the center.
 
