@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.1 (2024-05-11)
+
+### Fix
+
+- Fix wrong spelling, do not swap transformer, fix command in readme.md (#37) ([`2aa7951`](https://github.com/34j/vr180-convert/commit/2aa79515a49a39a4b7cf34f7cbd71b5f72902175))
+
 ## v0.2.0 (2024-04-30)
 
 ### Feature
