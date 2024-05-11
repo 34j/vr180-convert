@@ -105,7 +105,7 @@ v1c lr left.jpg right.jpg --automatch "0,0;0,0;1,1;1,1" # left_x1,left_y1;right_
 
 $$
 a_k, b_k \in \mathbb{R}^3, R \in SO(3),
-\min \sum_k \norm{R a_k - b_k}^2
+\min \sum_k \|\|R a_k - b_k\|\|^2
 $$
 
 ### Anaglyph
