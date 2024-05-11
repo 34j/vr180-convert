@@ -91,7 +91,7 @@ v1c lr left.jpg right.jpg --radius max # min(width, height) / 2
 
 ### Calibration
 
-Rotation matching using the least-squares method can be performed by clicking corresponding points that can be regarded as infinitely far away from the camera.
+[Rotation matching using the least-squares method](https://lisyarus.github.io/blog/posts/3d-shape-matching-with-quaternions.html) can be performed by clicking corresponding points that can be regarded as infinitely far away from the camera.
 
 ```shell
 v1c lr left.jpg right.jpg --automatch gui
@@ -102,6 +102,11 @@ You can also specify the corresponding points manually:
 ```shell
 v1c lr left.jpg right.jpg --automatch "0,0;0,0;1,1;1,1" # left_x1,left_y1;right_x1,right_y1;...
 ```
+
+$$
+a_k, b_k \in \mathbb{R}^3, R \in SO(3),
+\min \sum_k \norm{R a_k - b_k}^2
+$$
 
 ### Anaglyph
 
