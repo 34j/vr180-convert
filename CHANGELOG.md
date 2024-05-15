@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.2 (2024-05-15)
+
+### Fix
+
+- Update dependency typer to ^0.12.0 (#17) ([`ee9dcda`](https://github.com/34j/vr180-convert/commit/ee9dcda44345213f34a8bd61a59b9a13be37aaf7))
+
 ## v0.2.1 (2024-05-11)
 
 ### Fix
