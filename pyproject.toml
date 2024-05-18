@@ -49,6 +49,11 @@ sphinx = { version = ">=4.0", python = ">=3.11"}
 furo = { version = ">=2023.5.20", python = ">=3.11"}
 sphinx-autobuild = { version = ">=2024.0.0", python = ">=3.11"}
 
+
+[tool.poetry.group.xmp.dependencies]
+imagesize = "^1.4.1"
+python-xmp-toolkit = "^2.0.2"
+
 [tool.semantic_release]
 version_toml = ["pyproject.toml:tool.poetry.version"]
 version_variables = [
