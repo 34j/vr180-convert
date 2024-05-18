@@ -387,7 +387,15 @@ def xmp(
     import subprocess as sp
     from tempfile import NamedTemporaryFile
 
-    from libxmp import XMPFiles, XMPMeta
+    try:
+        from libxmp import XMPFiles, XMPMeta
+    except Exception:
+        import sys
+
+        command = "wsl sudo apt install -y exempi pipx python3.11\n"
+        f'pipx run --python=python3.11 vr180-convert {" ".join(sys.argv[1:])} -wsl'
+        LOG.info(f"Running command: {command}")
+        sp.run(command, check=True)  # noqa
 
     for in_path in in_paths:
         if wslpath:
