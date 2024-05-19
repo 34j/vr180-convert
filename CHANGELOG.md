@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.0 (2024-05-19)
+
+### Feature
+
+- Add rectilineardecoder (#44) ([`1fac41f`](https://github.com/34j/vr180-convert/commit/1fac41f4235e7354753cd6fd9a59e5bafe942ffc))
+
 ## v0.2.2 (2024-05-15)
 
 ### Fix
