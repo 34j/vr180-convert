@@ -1,4 +1,4 @@
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 from .remapper import apply, apply_lr, get_map
 from .transformer import (
     DenormalizeTransformer,

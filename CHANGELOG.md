@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.1 (2024-05-19)
+
+### Fix
+
+- Do not raise if multiple time matching images found (#45) ([`d1c8d9a`](https://github.com/34j/vr180-convert/commit/d1c8d9ae407279778517394a04a0acaa8fa1a486))
+
 ## v0.3.0 (2024-05-19)
 
 ### Feature
