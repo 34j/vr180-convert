@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 import cv2 as cv
+import numpy as np
 import typer
 from quaternion import *  # noqa
 from rich.logging import RichHandler
@@ -352,3 +353,16 @@ def s(
         boarder_mode=getattr(cv, boarder_mode.upper()),
         boarder_value=boarder_value,
     )
+
+
+@app.command()
+def swap(
+    in_paths: Annotated[list[Path], typer.Argument(help="Image paths")],
+) -> None:
+    """Swap left and right images."""
+    for in_path in in_paths:
+        out_path = in_path.with_suffix(f".swap{in_path.suffix}")
+        image = cv.imread(in_path.as_posix())
+        left, right = image[:, : image.shape[1] // 2], image[:, image.shape[1] // 2 :]
+        image_swapped = np.hstack([right, left])
+        cv.imwrite(out_path.as_posix(), image_swapped)
