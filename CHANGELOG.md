@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.0 (2024-05-20)
+
+### Feature
+
+- Add swap command in cli (#46) ([`7c18cb4`](https://github.com/34j/vr180-convert/commit/7c18cb44396ab4af996f9e196afa3bf950c4a955))
+
 ## v0.3.1 (2024-05-19)
 
 ### Fix
