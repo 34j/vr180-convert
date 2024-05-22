@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.1 (2024-05-22)
+
+### Fix
+
+- Update dependency scikit-learn to v1.5.0 (#48) ([`50c56b3`](https://github.com/34j/vr180-convert/commit/50c56b37d1f1392d2d03fcb61deb2521978bd652))
+
 ## v0.4.0 (2024-05-20)
 
 ### Feature
