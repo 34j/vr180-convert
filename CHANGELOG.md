@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.0 (2024-05-23)
+
+### Feature
+
+- Support the format used in google photos which utilizes xmp metadata (#43) ([`7a58f06`](https://github.com/34j/vr180-convert/commit/7a58f06df3fd71bea6de204c028c54d9e0a795bd))
+
 ## v0.4.1 (2024-05-22)
 
 ### Fix
