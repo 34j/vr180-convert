@@ -144,7 +144,7 @@ You can convert the image to this format by:
 v1c xmp lr.jpg
 ```
 
-The [python-xmp-toolkit](https://github.com/python-xmp-toolkit/python-xmp-toolkit) used in this command requires [exempi](https://libopenraw.freedesktop.org/exempi/) to be installed. Note that if this command is called on Windows, it will attempt to install and run this library on WSL using `subprocess`.
+The [python-xmp-toolkit](https://github.com/python-xmp-toolkit/python-xmp-toolkit) used in this command requires [exempi](https://libopenraw.freedesktop.org/exempi/) to be installed. Note that if this command is called on Windows, it will attempt to install this library and its dependencies and then run the command on WSL using `subprocess`.
 
 #### References
 
