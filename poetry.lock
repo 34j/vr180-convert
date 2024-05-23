@@ -772,7 +772,7 @@ testing = ["fields", "hunter", "process-tests", "pytest-xdist", "virtualenv"]
 name = "python-xmp-toolkit"
 version = "2.0.2"
 description = "Python XMP Toolkit for working with metadata."
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "python-xmp-toolkit-2.0.2.tar.gz", hash = "sha256:3a88431bb8222e9723da688b3ead50506f3ed3002749362845745dd995a7a68b"},
@@ -786,7 +786,7 @@ pytz = "*"
 name = "pytz"
 version = "2024.1"
 description = "World timezone definitions, modern and historical"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "pytz-2024.1-py2.py3-none-any.whl", hash = "sha256:328171f4e3623139da4983451950b28e95ac706e13f3f2630a879749e7a8b319"},
@@ -1465,7 +1465,11 @@ files = [
     {file = "websockets-12.0.tar.gz", hash = "sha256:81df9cbcbb6c260de1e007e58c011bfebe2dafc8435107b0537f393dd38c8b1b"},
 ]
 
+[extras]
+all = ["python-xmp-toolkit"]
+xmp = ["python-xmp-toolkit"]
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "56e18086dfa0ebc82f9aef093e9e09f974412d2a3d58d3e4fb1debabfa0a074c"
+content-hash = "7b3d74e819b9f6eacd91c8d8cc352fdb535abc4aca1c1be52abfbc905792bacf"
