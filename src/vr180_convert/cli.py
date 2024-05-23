@@ -407,9 +407,9 @@ def xmp(
         # extract left image
         left_image = image[:, : image.shape[1] // 2]
         right_image = image[:, image.shape[1] // 2 :]
-        width = left_image.shape[1]
-        height = left_image.shape[0]
-        with NamedTemporaryFile() as right_file:
+        width = image.shape[1]
+        height = image.shape[0]
+        with NamedTemporaryFile(suffix=left_path.suffix) as right_file:
             cv.imwrite(left_path.as_posix(), left_image)
             cv.imwrite(right_file.name, right_image)
 
@@ -442,19 +442,17 @@ def xmp(
 
             # Set GImage properties
             lxmp.set_property(XMP_GIMAGE, "Mime", "image/jpeg")
+            lxmp.set_property(
+                XMP_GIMAGE, "Data", base64.b64encode(right_file.read()).decode()
+            )
 
             # Set xmpNote properties and write right image
             lxmp.set_property(
-                XMP_NOTE, "HasExtendedXMP", "8ea276ccb46c24e0d817cac636d524e7"
-            )
-            lxmp.set_property(
-                XMP_GIMAGE, "Data", base64.b64encode(right_file.read()).decode("utf-8")
+                XMP_NOTE, "HasExtendedXMP", "06A56CB0A1A7FAFDA459CA3FAA14B474"
             )
 
             if not xmpfile.can_put_xmp(lxmp):
                 raise ValueError(f"Cannot put XMP to {in_path}")
-
-            LOG.info(f"{in_path=}, {lxmp=}")
 
             xmpfile.put_xmp(lxmp)
             xmpfile.close_file()
