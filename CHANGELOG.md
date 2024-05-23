@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.1 (2024-05-23)
+
+### Fix
+
+- Fix extras (#51) ([`2146703`](https://github.com/34j/vr180-convert/commit/21467032ef59da0a066523d4e00085f0b22902e8))
+
 ## v0.5.0 (2024-05-23)
 
 ### Feature
