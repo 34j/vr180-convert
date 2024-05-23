@@ -73,7 +73,8 @@ v1c lr left.jpg right_dir
 v1c lr left_dir right.jpg
 ```
 
-It is recommended to synchronize the clocks of the cameras before shooting. However, it can be adjusted by specifying `-ac` option.
+Since clocks on cameras may not be very accurate in some cases, it is recommended to check how quickly the clocks of the two cameras shift, and synchronize the clocks before shooting.
+However, it can be adjusted by specifying `-ac` option.
 
 ```shell
 v1c lr left.jpg right_dir -ac 1 # the clock of the right camera is 1 second faster / ahead
@@ -123,6 +124,32 @@ If the camera is mounted upside down, you can simply use the `--swap` option wit
 ```shell
 v1c lr left.jpg right.jpg --swap
 ```
+
+Or the image can be simply swapped using the `swap` command:
+
+```shell
+v1c swap rl.jpg
+```
+
+in case one notices that the left and right images are swapped after the conversion.
+
+### Convert to Google's format (Photo Sphere XMP Metadata)
+
+This format is special in that it base64-encodes the right-eye image into the metadata of the left-eye image.
+Required for Google Photos, etc.
+
+You can convert the image to this format by:
+
+```shell
+v1c xmp lr.jpg
+```
+
+The [python-xmp-toolkit](https://github.com/python-xmp-toolkit/python-xmp-toolkit) used in this command requires [exempi](https://libopenraw.freedesktop.org/exempi/) to be installed. Note that if this command is called on Windows, it will attempt to install this library and its dependencies and then run the command on WSL using `subprocess`.
+
+#### References
+
+- [imrivera/google\-photos\-vr180\-test: Test for XMP metadata parsing for VR180 pictures in Google Photos](https://github.com/imrivera/google-photos-vr180-test)
+- [temoki/make_vr180photo_py: 左眼カメラ画像と右眼カメラ画像を結合して VR180 3D フォトを作成する Python スクリプト](https://github.com/temoki/make_vr180photo_py)
 
 ### Custom conversion model
 
@@ -197,17 +224,31 @@ In anaglyph images,
 
 This program cannot read RAW files. To deal with white-outs, etc., it is required to process each image with a program such as Photoshop, Lightroom, [RawTherapee](https://rawtherapee.com/downloads/), [Darktable](https://www.darktable.org/install/), etc.
 
-However, this is so exhaustive, so it is recommended to take the images with jpeg format, being careful not to overexpose the images, and convert them with this program, then use Lightroom, [RawTherapee](https://rawtherapee.com/downloads/), [Darktable](https://www.darktable.org/install/) or other software to adjust colors and exposure, etc.
+However, this is so exhaustive, so it is recommended to take the images with JPEG format with care to **avoid overexposure** and to **match the settings** of the two cameras, then convert them with this program and edit the converted images.
 
-#### Example of processing in Photoshop (Exquisite editing)
+<details>
+<summary>Example of editing in RawTherapee (Light editing)</summary>
 
-1. Open one of the images just for specifying the canvas size.
-2. Add each image as Smart Objects (`LRaw`, `RRaw`) and make **minimal** corrections to match the exposure using `Camera Raw Filter`.
-3. Make each Smart Object into Smart Objects (`L`, `R`) again and do any image-dependent processing, such as removing the background.
-4. Make both images into a single Smart Object (`P`) and process them as a whole.
-5. Delete the background image created in step 1.
-6. Export as a PNG file.
-7. Hide the other Smart Object (`L` or `R`) (created in step 3) in the Smart Object `P` (created in step 4) and save the Smart Object `P`, then export as a PNG file.
+1. Rank the left images in RawTherapee.
+2. Use this program to convert the images.
+3. Edit the converted images in RawTherapee.
+
+</details>
+
+<details>
+<summary>Example of editing in Photoshop (Exquisite editing)</summary>
+
+1. Rank the left images in RawTherapee or Lightroom.
+2. Open left image as a Smart Object `LRaw`.
+3. Add right image as a Smart Object `RRaw`.
+4. Make **minimal** corrections just to match the exposure using `Camera Raw Filter`.
+5. Make each Smart Object into Smart Objects (`L`, `R`) again and do any image-dependent processing, such as removing the background.
+6. Make both images into a single Smart Object (`P`) and process them as a whole.
+7. Export as a PNG file.
+8. Hide the other Smart Object (`L` or `R`) (created in step 3) in the Smart Object `P` (created in step 4) and save the Smart Object `P`, then export as a PNG file.
+9. Use this program to convert the images.
+
+</details>
 
 ## Contributors ✨
 

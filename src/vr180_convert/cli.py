@@ -356,6 +356,109 @@ def s(
 
 
 @app.command()
+def xmp(
+    in_paths: Annotated[list[Path], typer.Argument(help="Image paths")],
+    wslpath: Annotated[
+        bool,
+        typer.Option(
+            "-wsl",
+            "--wslpath",
+            help="Convert Windows path to WSL path, be careful as it uses subprocess",
+        ),
+    ] = False,
+) -> None:
+    """Add XMP metadata to the image."""
+    import base64
+    import subprocess as sp
+    from tempfile import NamedTemporaryFile
+
+    try:
+        from libxmp import XMPFiles, XMPMeta
+    except Exception as e:
+        import os
+        import sys
+
+        if os.name != "nt":
+            raise e
+
+        LOG.info("Trying to install this package in WSL...")
+        command = (
+            "wsl -- sudo apt install -y exempi pipx python3.11 "
+            f'&& pipx run --python=python3.11 vr180-convert {" ".join(sys.argv[1:])} -wsl'
+        )
+        LOG.info(f"Running command: {command}")
+        sp.run(command, check=True)  # noqa
+
+        return
+
+    for in_path in in_paths:
+        if wslpath:
+            in_path = Path(
+                sp.run(["wslpath", "-u", "-a", in_path], capture_output=True)  # noqa
+                .stdout.decode()
+                .strip()
+            )
+
+        left_path = in_path.with_suffix(f".xmp{in_path.suffix}")
+
+        # read combined image
+        image = cv.imread(in_path.as_posix())
+
+        # extract left image
+        left_image = image[:, : image.shape[1] // 2]
+        right_image = image[:, image.shape[1] // 2 :]
+        width = image.shape[1]
+        height = image.shape[0]
+        with NamedTemporaryFile(suffix=left_path.suffix) as right_file:
+            cv.imwrite(left_path.as_posix(), left_image)
+            cv.imwrite(right_file.name, right_image)
+
+            # use left file as a base
+            xmpfile = XMPFiles(file_path=left_path.as_posix(), open_forupdate=True)
+            lxmp = XMPMeta()
+
+            LOG.debug(f"{in_path=}, {lxmp=}")
+
+            # Google's namespace
+            XMP_GIMAGE = "http://ns.google.com/photos/1.0/image/"
+            XMP_GPANO = "http://ns.google.com/photos/1.0/panorama/"
+            XMP_NOTE = "http://ns.adobe.com/xmp/note/"
+            XMPMeta.register_namespace(XMP_GIMAGE, "GImage")
+            XMPMeta.register_namespace(XMP_GPANO, "GPano")
+            XMPMeta.register_namespace(XMP_NOTE, "xmpNote")
+
+            # Set GPano properties
+            lxmp.set_property(XMP_GPANO, "UsePanoramaViewer", "True")
+            lxmp.set_property(XMP_GPANO, "ProjectionType", "equirectangular")
+            lxmp.set_property_int(XMP_GPANO, "CroppedAreaImageWidthPixels", width / 2)
+            lxmp.set_property_int(XMP_GPANO, "CroppedAreaImageHeightPixels", height)
+            lxmp.set_property_int(XMP_GPANO, "CroppedAreaLeftPixels", width / 4)
+            lxmp.set_property_int(XMP_GPANO, "CroppedAreaTopPixels", 0)
+            lxmp.set_property_int(XMP_GPANO, "FullPanoWidthPixels", width)
+            lxmp.set_property_int(XMP_GPANO, "FullPanoHeightPixels", height)
+            lxmp.set_property_int(XMP_GPANO, "PosePitchDegrees", 0)
+            lxmp.set_property_int(XMP_GPANO, "PoseRollDegrees", 0)
+            lxmp.set_property_int(XMP_GPANO, "InitialViewHeadingDegrees", 180)
+
+            # Set GImage properties
+            lxmp.set_property(XMP_GIMAGE, "Mime", "image/jpeg")
+            lxmp.set_property(
+                XMP_GIMAGE, "Data", base64.b64encode(right_file.read()).decode()
+            )
+
+            # Set xmpNote properties and write right image
+            lxmp.set_property(
+                XMP_NOTE, "HasExtendedXMP", "06A56CB0A1A7FAFDA459CA3FAA14B474"
+            )
+
+            if not xmpfile.can_put_xmp(lxmp):
+                raise ValueError(f"Cannot put XMP to {in_path}")
+
+            xmpfile.put_xmp(lxmp)
+            xmpfile.close_file()
+
+
+@app.command()
 def swap(
     in_paths: Annotated[list[Path], typer.Argument(help="Image paths")],
 ) -> None:
