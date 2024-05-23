@@ -1,5 +1,35 @@
 # Changelog
 
+## v0.4.1 (2024-05-22)
+
+### Fix
+
+- Update dependency scikit-learn to v1.5.0 (#48) ([`50c56b3`](https://github.com/34j/vr180-convert/commit/50c56b37d1f1392d2d03fcb61deb2521978bd652))
+
+## v0.4.0 (2024-05-20)
+
+### Feature
+
+- Add swap command in cli (#46) ([`7c18cb4`](https://github.com/34j/vr180-convert/commit/7c18cb44396ab4af996f9e196afa3bf950c4a955))
+
+## v0.3.1 (2024-05-19)
+
+### Fix
+
+- Do not raise if multiple time matching images found (#45) ([`d1c8d9a`](https://github.com/34j/vr180-convert/commit/d1c8d9ae407279778517394a04a0acaa8fa1a486))
+
+## v0.3.0 (2024-05-19)
+
+### Feature
+
+- Add rectilineardecoder (#44) ([`1fac41f`](https://github.com/34j/vr180-convert/commit/1fac41f4235e7354753cd6fd9a59e5bafe942ffc))
+
+## v0.2.2 (2024-05-15)
+
+### Fix
+
+- Update dependency typer to ^0.12.0 (#17) ([`ee9dcda`](https://github.com/34j/vr180-convert/commit/ee9dcda44345213f34a8bd61a59b9a13be37aaf7))
+
 ## v0.2.1 (2024-05-11)
 
 ### Fix

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 import cv2 as cv
+import numpy as np
 import typer
 from quaternion import *  # noqa
 from rich.logging import RichHandler
@@ -168,14 +169,6 @@ def lr(
         ]
         if len(left_path_candidates) == 0:
             raise ValueError("No time-matched left image found")
-        if (
-            len(left_path_candidates) > 1
-            and left_path_candidates[0].stat().st_mtime
-            == left_path_candidates[1].stat().st_mtime
-        ):
-            raise ValueError(
-                f"Multiple time-matched left images found: {left_path_candidates}"
-            )
         left_path = left_path_candidates[0]
     elif not left_path.is_dir() and right_path.is_dir():
         # find closest time-matched left image
@@ -195,14 +188,6 @@ def lr(
         ]
         if len(right_path_candidates) == 0:
             raise ValueError("No time-matched right image found")
-        if (
-            len(right_path_candidates) > 1
-            and right_path_candidates[0].stat().st_mtime
-            == right_path_candidates[1].stat().st_mtime
-        ):
-            raise ValueError(
-                f"Multiple time-matched right images found: {right_path_candidates}"
-            )
         right_path = right_path_candidates[0]
     elif left_path.is_dir() and right_path.is_dir():
         raise ValueError("Both left and right paths must not be directories")
@@ -464,3 +449,16 @@ def xmp(
 
             xmpfile.put_xmp(lxmp)
             xmpfile.close_file()
+
+
+@app.command()
+def swap(
+    in_paths: Annotated[list[Path], typer.Argument(help="Image paths")],
+) -> None:
+    """Swap left and right images."""
+    for in_path in in_paths:
+        out_path = in_path.with_suffix(f".swap{in_path.suffix}")
+        image = cv.imread(in_path.as_posix())
+        left, right = image[:, : image.shape[1] // 2], image[:, image.shape[1] // 2 :]
+        image_swapped = np.hstack([right, left])
+        cv.imwrite(out_path.as_posix(), image_swapped)
