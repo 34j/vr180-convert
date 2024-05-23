@@ -29,12 +29,17 @@ v1c = "vr180_convert.cli:app"
 [tool.poetry.dependencies]
 python = "^3.9"
 rich = ">=10"
-typer = {extras = ["all"], version = "^0.12.0"}
+typer = "^0.12.0"
 opencv-python = "^4.9.0.80"
 attrs = "^23.2.0"
 scikit-learn = "^1.4.2"
 numpy-quaternion = "^2023.0.3"
 strenum = "^0.4.15"
+python-xmp-toolkit = {version="^2.0.2", optional=true}
+
+[tool.poetry.extras]
+xmp = ["python-xmp-toolkit"]
+all = ["python-xmp-toolkit"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
@@ -48,10 +53,6 @@ myst-parser = { version = ">=0.16", python = ">=3.11"}
 sphinx = { version = ">=4.0", python = ">=3.11"}
 furo = { version = ">=2023.5.20", python = ">=3.11"}
 sphinx-autobuild = { version = ">=2024.0.0", python = ">=3.11"}
-
-
-[tool.poetry.group.xmp.dependencies]
-python-xmp-toolkit = "^2.0.2"
 
 [tool.semantic_release]
 version_toml = ["pyproject.toml:tool.poetry.version"]
