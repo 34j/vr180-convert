@@ -374,13 +374,22 @@ def xmp(
 
     try:
         from libxmp import XMPFiles, XMPMeta
-    except Exception:
+    except Exception as e:
+        import os
         import sys
 
-        command = "wsl sudo apt install -y exempi pipx python3.11\n"
-        f'pipx run --python=python3.11 vr180-convert {" ".join(sys.argv[1:])} -wsl'
+        if os.name != "nt":
+            raise e
+
+        LOG.info("Trying to install this package in WSL...")
+        command = (
+            "wsl -- sudo apt install -y exempi pipx python3.11 "
+            f'`&`& pipx run --python=python3.11 vr180-convert {" ".join(sys.argv[1:])} -wsl'
+        )
         LOG.info(f"Running command: {command}")
-        sp.run(command, check=True)  # noqa
+        sp.run(command, check=True, shell=True)  # noqa
+
+        return
 
     for in_path in in_paths:
         if wslpath:
