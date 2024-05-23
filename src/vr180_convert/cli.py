@@ -384,10 +384,10 @@ def xmp(
         LOG.info("Trying to install this package in WSL...")
         command = (
             "wsl -- sudo apt install -y exempi pipx python3.11 "
-            f'`&`& pipx run --python=python3.11 vr180-convert {" ".join(sys.argv[1:])} -wsl'
+            f'&& pipx run --python=python3.11 vr180-convert {" ".join(sys.argv[1:])} -wsl'
         )
         LOG.info(f"Running command: {command}")
-        sp.run(command, check=True, shell=True)  # noqa
+        sp.run(command, check=True)  # noqa
 
         return
 
