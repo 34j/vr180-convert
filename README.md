@@ -224,7 +224,7 @@ In anaglyph images,
 
 This program cannot read RAW files. To deal with white-outs, etc., it is required to process each image with a program such as Photoshop, Lightroom, [RawTherapee](https://rawtherapee.com/downloads/), [Darktable](https://www.darktable.org/install/), etc.
 
-However, this is so exhaustive, so it is recommended to take the images with jpeg format, being careful not to overexpose the images, and convert them with this program, then use image editing software to adjust the colors and exposure, etc.
+However, this is so exhaustive, so it is recommended to take the images with JPEG format with care to avoid overexposure and to match the settings of the two cameras, and convert them with this program, then edit the converted images.
 
 <details>
 <summary>Example of editing in RawTherapee (Light editing)</summary>
