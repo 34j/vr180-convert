@@ -112,6 +112,8 @@ $$
 <details>
   <summary>Derivation</summary>
 
+#### Derivation
+
 It is known that
 
 $$
