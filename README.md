@@ -129,23 +129,23 @@ $$
 which shows that
 
 $$
-f_l, f_r: SU(2) \to SO(3) \text{ or } \mathbb{R}^{3} \to \mathbb{R}^{3 \times 3}, (q_0, q_1, q_2, q_3) \mapsto \begin{pmatrix} q_0 & -q_1 & -q_2 & -q_3 \\ q_1 & q_0 & -q_3 & q_2 \\ q_2 & q_3 & q_0 & -q_1 \\ q_3 & -q_2 & q_1 & q_0 \end{pmatrix}, \begin{pmatrix} q_0 & -q_1 & -q_2 & -q_3 \\ q_1 & q_0 & q_3 & -q_2 \\ q_2 & -q_3 & q_0 & q_1 \\ q_3 & q_2 & -q_1 & q_0 \end{pmatrix} \\
-\forall p, q \in SU(2) \text{ or } \mathbb{R}^{3}, p * q = f_l(p) \begin{pmatrix} q_0 \\ q_1 \\ q_2 \\ q_3 \end{pmatrix} = f_r(q) \begin{pmatrix} p_0 \\ p_1 \\ p_2 \\ p_3 \end{pmatrix}
+f_l, f_r: SU(2) \to SO(3) \text{ or } \mathbb{R}^{3} \to \mathbb{R}^{3 \times 3}, (q_0, q_1, q_2, q_3) \mapsto \begin{pmatrix} q_0 & -q_1 & -q_2 & -q_3 \\\\ q_1 & q_0 & -q_3 & q_2 \\\\ q_2 & q_3 & q_0 & -q_1 \\\\ q_3 & -q_2 & q_1 & q_0 \end{pmatrix}, \begin{pmatrix} q_0 & -q_1 & -q_2 & -q_3 \\\\ q_1 & q_0 & q_3 & -q_2 \\\\ q_2 & -q_3 & q_0 & q_1 \\\\ q_3 & q_2 & -q_1 & q_0 \end{pmatrix} \\\\
+\forall p, q \in SU(2) \text{ or } \mathbb{R}^{3}, p * q = f_l(p) \begin{pmatrix} q_0 \\\\ q_1 \\\\ q_2 \\\\ q_3 \end{pmatrix} = f_r(q) \begin{pmatrix} p_0 \\\\ p_1 \\\\ p_2 \\\\ p_3 \end{pmatrix}
 $$
 
 Using this
 
 $$
 \begin{aligned}
-E(q) &:= \sum_k \|R a_k - b_k\|^2 \\
-&= \sum_k \|q * a_k * q^{-1} - b_k\|^2 \\
-&= \sum_k \|(q * a_k - b_k * q) * q^{-1}\|^2 \\
-&= \sum_k \|q * a_k - b_k * q\|^2 \| q^{-1} \|^2 \\
-&= \sum_k \|q * a_k - b_k * q\|^2 \\
-&= \sum_k \|f_r(a_k) q - f_l(b_k) q\|^2 \\
-&= \sum_k \|(f_r(a_k) - f_l(b_k)) q\|^2 \\
-&= \sum_k q^T (f_r(a_k) - f_l(b_k))^T (f_r(a_k) - f_l(b_k)) q \\
-&= q^T \left( \sum_k (f_r(a_k) - f_l(b_k))^T (f_r(a_k) - f_l(b_k)) \right) q \\
+E(q) &:= \sum_k \|R a_k - b_k\|^2 \\\\
+&= \sum_k \|q * a_k * q^{-1} - b_k\|^2 \\\\
+&= \sum_k \|(q * a_k - b_k * q) * q^{-1}\|^2 \\\\
+&= \sum_k \|q * a_k - b_k * q\|^2 \| q^{-1} \|^2 \\\\
+&= \sum_k \|q * a_k - b_k * q\|^2 \\\\
+&= \sum_k \|f_r(a_k) q - f_l(b_k) q\|^2 \\\\
+&= \sum_k \|(f_r(a_k) - f_l(b_k)) q\|^2 \\\\
+&= \sum_k q^T (f_r(a_k) - f_l(b_k))^T (f_r(a_k) - f_l(b_k)) q \\\\
+&= q^T \left( \sum_k (f_r(a_k) - f_l(b_k))^T (f_r(a_k) - f_l(b_k)) \right) q \\\\
 &= q^T B q
 \end{aligned}
 $$
