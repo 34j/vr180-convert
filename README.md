@@ -123,7 +123,11 @@ $$
 where
 
 $$
-\forall (v_0, v), (w_0, w) \in \mathbb{R}^4, (v_0, v) * (w_0, w) := (v_0 w_0 - v \cdot w, v_0 w + w_0 v + v \times w)
+\forall (v_0, \bm{v}), (w_0,bm{w}) \in \mathbb{R}^4, (v_0, \bm{v}) * (w_0, \bm{w}) := (v_0 w_0 - \bm{v} \cdot \bm{w}, v_0 \bm{w} + w_0 \bm{v} + \bm{v} \times \bm{w})
+$$
+
+$$
+(q_0, \bm{q})^{-1} = \frac{(q_0, -\bm{q})}{\|q\|^2}
 $$
 
 which shows that
