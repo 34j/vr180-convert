@@ -106,8 +106,65 @@ v1c lr left.jpg right.jpg --automatch "0,0;0,0;1,1;1,1" # left_x1,left_y1;right_
 
 $$
 a_k, b_k \in \mathbb{R}^3,
-\min_{R \in SO(3)} \sum_k \|\|R a_k - b_k\|\|^2
+\min_{R \in SO(3)} \sum_k \|R a_k - b_k\|^2
 $$
+
+<details>
+  <summary>Derivation</summary>
+
+It is known that
+
+$$
+\exists_2 q \in SU(2) \subset \mathbb{R}^4, R \in SO(3) \subset \mathbb{R}^{3 \times 3}, \forall a \in \mathbb{R}^3, R a = q * (a, 0) * q^{-1}
+$$
+
+where
+
+$$
+\forall (v_0, v), (w_0, w) \in \mathbb{R}^4, (v_0, v) * (w_0, w) := (v_0 w_0 - v \cdot w, v_0 w + w_0 v + v \times w)
+$$
+
+which shows that
+
+$$
+f_l, f_r: SU(2) \to SO(3) \text{ or } \mathbb{R}^{3} \to \mathbb{R}^{3 \times 3}, (q_0, q_1, q_2, q_3) \mapsto \begin{pmatrix} q_0 & -q_1 & -q_2 & -q_3 \\ q_1 & q_0 & -q_3 & q_2 \\ q_2 & q_3 & q_0 & -q_1 \\ q_3 & -q_2 & q_1 & q_0 \end{pmatrix}, \begin{pmatrix} q_0 & -q_1 & -q_2 & -q_3 \\ q_1 & q_0 & q_3 & -q_2 \\ q_2 & -q_3 & q_0 & q_1 \\ q_3 & q_2 & -q_1 & q_0 \end{pmatrix} \\
+\forall p, q \in SU(2) \text{ or } \mathbb{R}^{3}, p * q = f_l(p) \begin{pmatrix} q_0 \\ q_1 \\ q_2 \\ q_3 \end{pmatrix} = f_r(q) \begin{pmatrix} p_0 \\ p_1 \\ p_2 \\ p_3 \end{pmatrix}
+$$
+
+Using this
+
+$$
+\begin{align}
+E(q) &:= \sum_k \|R a_k - b_k\|^2 \\
+&= \sum_k \|q * a_k * q^{-1} - b_k\|^2 \\
+&= \sum_k \|(q * a_k - b_k * q) * q^{-1}\|^2 \\
+&= \sum_k \|q * a_k - b_k * q\|^2 \| q^{-1} \|^2 \\
+&= \sum_k \|q * a_k - b_k * q\|^2 \\
+&= \sum_k \|f_r(a_k) q - f_l(b_k) q\|^2 \\
+&= \sum_k \|(f_r(a_k) - f_l(b_k)) q\|^2 \\
+&= \sum_k q^T (f_r(a_k) - f_l(b_k))^T (f_r(a_k) - f_l(b_k)) q \\
+&= q^T \left( \sum_k (f_r(a_k) - f_l(b_k))^T (f_r(a_k) - f_l(b_k)) \right) q \\
+&= q^T B q
+\end{align}
+$$
+
+($E(q)$ is a quadratic form.)
+
+As $B$ is symmetric, there exists an orthogonal matrix $P$ such that $B = P^T \Lambda P$ where $\Lambda = \mathrm{diag} \{\lambda_i\} (\lambda_1 < \dots < \lambda_4)$ is diagonal. Let $r = P q$, then
+
+$$
+E(q) = (P q)^T D (P q) = r^T D r = \sum_i \lambda_i r_i^2
+$$
+
+under
+
+$$
+\| r \| = r^T r = q^T P^T P q = q^T q = 1
+$$
+
+and $E(q)$ is minimized when $r = (1, 0, 0, 0)^T$ and $q = P (1, 0, 0, 0)^T = v_1$ where $v_1$ is the eigenvector corresponding to $\lambda_1$.
+
+</details>
 
 ### Anaglyph
 
