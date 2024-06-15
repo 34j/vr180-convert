@@ -136,7 +136,7 @@ $$
 Using this
 
 $$
-\begin{align}
+\begin{aligned}
 E(q) &:= \sum_k \|R a_k - b_k\|^2 \\
 &= \sum_k \|q * a_k * q^{-1} - b_k\|^2 \\
 &= \sum_k \|(q * a_k - b_k * q) * q^{-1}\|^2 \\
@@ -147,7 +147,7 @@ E(q) &:= \sum_k \|R a_k - b_k\|^2 \\
 &= \sum_k q^T (f_r(a_k) - f_l(b_k))^T (f_r(a_k) - f_l(b_k)) q \\
 &= q^T \left( \sum_k (f_r(a_k) - f_l(b_k))^T (f_r(a_k) - f_l(b_k)) \right) q \\
 &= q^T B q
-\end{align}
+\end{aligned}
 $$
 
 ($E(q)$ is a quadratic form.)
