@@ -5,7 +5,7 @@
 :maxdepth: 2
 
 installation
-usage
+math
 ```
 
 ```{toctree}
