@@ -109,7 +109,7 @@ a_k, b_k \in \mathbb{R}^3,
 \min_{R \in SO(3)} \sum_k \|R a_k - b_k\|^2
 $$
 
-See the [Documentation](https://vr180-convert.readthedocs.io/en/latest/math.html) for mathematical details.
+Please also refer to the [Documentation](https://vr180-convert.readthedocs.io/en/latest/math.html) for mathematical details.
 
 ### Anaglyph
 

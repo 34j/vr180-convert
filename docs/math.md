@@ -60,6 +60,7 @@ and $E(q)$ is minimized when $r = (1, 0, 0, 0)^T$ and $q = P (1, 0, 0, 0)^T = v_
 
 ## References
 
+- [3D shape matching with quaternions \| lisyarus blog](https://lisyarus.github.io/blog/posts/3d-shape-matching-with-quaternions.html)
 - [Showing the Correctness of Quaternion Rotation](https://erkaman.github.io/posts/quaternion_rotation.html#mjx-eqn-eqquatprod)
 - [クォータニオン計算便利ノート](https://www.mesw.co.jp/business/report/pdf/mss_18_07.pdf)
 - [ゲームプログラマのための数学の歩き方 - クォータニオンとリー群編](http://www.jp.square-enix.com/tech/library/pdf/CEDEC2021_SQEX_IMI_Quaternion_20210827_public.pdf)
