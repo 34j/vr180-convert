@@ -7,7 +7,7 @@ from typing import Literal, Sequence
 import cv2 as cv
 import numpy as np
 from numpy.typing import NDArray
-from quaternion import as_quat_array, quaternion
+from quaternion import as_quat_array, quaternion, rotate_vectors
 
 from .transformer import (
     DenormalizeTransformer,
@@ -138,17 +138,105 @@ def rotation_match(
     B = np.einsum("jik,jlk->il", S, S)
     eigenvalues, eigenvectors = np.linalg.eig(B)
     q = eigenvectors[:, np.argmin(eigenvalues)]
+    E = eigenvalues.min()
+    LOG.debug(f"Error: {E}")
     return as_quat_array([q[..., 3], q[..., 0], q[..., 1], q[..., 2]])
 
 
+def rotation_match_robust(
+    points_to_be_rotated: NDArray,
+    points: NDArray,
+    n_iter: int = 4,
+    percentile: float = 0.8,
+) -> quaternion:
+    """
+    Match the rotation of two sets of 3d points.
+
+    Repeats calling rotation_match() and removing the outliers.
+
+    Parameters
+    ----------
+    points_to_be_rotated : _type_
+        Array of shape (..., 3)
+    points : NDArray
+        Array of shape (..., 3)
+
+    Returns
+    -------
+    quaternion
+        quaternion that minimizes the distance between the rotated
+        `points_to_be_rotated` and `points`.
+
+    References
+    ----------
+    https://lisyarus.github.io/blog/posts/3d-shape-matching-with-quaternions.html
+
+    """
+    for i in range(n_iter):
+        q = rotation_match(points_to_be_rotated, points)
+        if i == n_iter - 1:
+            break
+        error = np.linalg.norm(
+            rotate_vectors(q, points_to_be_rotated) - points, axis=-1
+        )
+        threshold = np.percentile(error, percentile * 100)
+        error_too_large = error > threshold
+        points_to_be_rotated = points_to_be_rotated[~error_too_large]
+        points = points[~error_too_large]
+    return q
+
+
+def match_points(
+    image1: NDArray, image2: NDArray, *, scale: float = 1
+) -> tuple[Sequence[tuple[float, float]], Sequence[tuple[float, float]]]:
+    """
+    Match the points in two images.
+
+    Parameters
+    ----------
+    image1 : NDArray
+        Image 1.
+    image2 : NDArray
+        Image 2.
+
+    Returns
+    -------
+    tuple[Sequence[tuple[float, float]], Sequence[tuple[float, float]]]
+        The points in image1 and image2.
+
+    """
+    akaze = cv.AKAZE_create()
+    if scale != 1:
+        image1 = cv.resize(
+            image1, (int(image1.shape[1] * scale), int(image1.shape[0] * scale))
+        )
+        image2 = cv.resize(
+            image2, (int(image2.shape[1] * scale), int(image2.shape[0] * scale))
+        )
+    kp1, des1 = akaze.detectAndCompute(image1, None)
+    kp2, des2 = akaze.detectAndCompute(image2, None)
+    bf = cv.BFMatcher()
+    matches = bf.match(des1, des2)
+    points1, points2 = [], []
+    for m in matches:
+        points1.append(kp1[m.queryIdx].pt)
+        points2.append(kp2[m.trainIdx].pt)
+    points1_ = np.array(points1)
+    points2_ = np.array(points2)
+    if scale != 1:
+        points1_ /= scale
+        points2_ /= scale
+    return points1_, points2_
+
+
 def match_lr(
-    decoder: TransformerBase,
+    decoder: TransformerBase | tuple[TransformerBase, TransformerBase],
     points_l: Sequence[tuple[float, float]],
     points_r: Sequence[tuple[float, float]],
     in_paths: Sequence[Path | str],
     *,
     radius: float | Literal["auto", "max"] = "auto",
-) -> quaternion:
+) -> tuple[NDArray, NDArray]:
     """
     Get the quaternion that minimizes the distance between the rotated points.
 
@@ -167,8 +255,8 @@ def match_lr(
 
     Returns
     -------
-    quaternion
-        The quaternion to be applied to the left points.
+    tuple[NDArray, NDArray]
+        The arguments for `rotation_match()` or `rotation_match_robust()`.
 
     Raises
     ------
@@ -178,20 +266,40 @@ def match_lr(
     """
     if len(points_l) != len(points_r):
         raise ValueError("The number of points must be the same.")
-    points_ = np.concatenate([points_l, points_r], axis=0)
-    images = [cv.imread(Path(from_path).as_posix()) for from_path in in_paths]
-    xmap, ymap = points_[:, 0], points_[:, 1]
-    xmap, ymap = xmap.astype(np.float32), ymap.astype(np.float32)
-    xmap, ymap = (
-        decoder
-        * DenormalizeTransformer(
-            scale=(radius, radius),
-            center=(images[0].shape[1] // 2, images[0].shape[0] // 2),
-        )
-    ).inverse_transform(xmap, ymap)
-    v = equidistant_to_3d(xmap, ymap)
-    vl, vr = v[: len(points_l)], v[len(points_l) :]
-    return rotation_match(vl, vr)
+    images = [cv.imread(Path(in_path).as_posix()) for in_path in in_paths]
+    center = (images[0].shape[1] // 2, images[0].shape[0] // 2)
+    radius = get_radius_smart(radius, images)
+    if isinstance(decoder, tuple):
+        for i, (decoder_, points) in enumerate(zip(decoder, [points_l, points_r])):
+            points_ = np.array(points)
+            xmap, ymap = points_[:, 0], points_[:, 1]
+            xmap, ymap = xmap.astype(np.float32), ymap.astype(np.float32)
+            xmap, ymap = (
+                decoder_
+                * DenormalizeTransformer(
+                    scale=(radius, radius),
+                    center=center,
+                )
+            ).inverse_transform(xmap, ymap)
+            v = equidistant_to_3d(xmap, ymap)
+            if i == 0:
+                vl = v
+            else:
+                vr = v
+    else:
+        points_ = np.concatenate([points_l, points_r], axis=0)
+        xmap, ymap = points_[:, 0], points_[:, 1]
+        xmap, ymap = xmap.astype(np.float32), ymap.astype(np.float32)
+        xmap, ymap = (
+            decoder
+            * DenormalizeTransformer(
+                scale=(radius, radius),
+                center=center,
+            )
+        ).inverse_transform(xmap, ymap)
+        v = equidistant_to_3d(xmap, ymap)
+        vl, vr = v[: len(points_l)], v[len(points_l) :]
+    return vl, vr
 
 
 def apply(

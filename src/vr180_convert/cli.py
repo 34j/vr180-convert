@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timezone
 from enum import auto
 from hashlib import sha256
@@ -22,7 +23,14 @@ from vr180_convert.transformer import (
     TransformerBase,
 )
 
-from .remapper import apply, apply_lr, match_lr
+from .remapper import (
+    apply,
+    apply_lr,
+    match_lr,
+    match_points,
+    rotation_match,
+    rotation_match_robust,
+)
 
 LOG = getLogger(__name__)
 DEFAULT_EXTENSION = "png"
@@ -123,7 +131,9 @@ def lr(
     radius: Annotated[
         str, typer.Option(help="Radius of the fisheye image, defaults to 'auto'")
     ] = "auto",
-    merge: Annotated[bool, typer.Option(help="Export as an anaglyph")] = False,
+    merge: Annotated[
+        bool, typer.Option("-m", "--merge", "--anaglyph", help="Export as an anaglyph")
+    ] = False,
     autosearch_timestamp_calib_r_earlier_l: Annotated[
         float,
         typer.Option(
@@ -206,7 +216,10 @@ def lr(
         transformer_ = EquirectangularEncoder() * FisheyeDecoder("equidistant")
     else:
         transformer_ = eval(transformer)  # noqa
+
+    # evaluate automatch
     if automatch != "":
+        # split transformer into two parts (before and after the first encoder)
         if not isinstance(transformer_, MultiTransformer):
             raise ValueError("Automatch requires MultiTransformer")
 
@@ -222,25 +235,40 @@ def lr(
         )
         LOG.debug(f"{transformer_until_encoder=}, {transformer_after_encoder=}")
 
-        if automatch == "gui":
-            automatch_ = _get_position_gui(
-                [left_path, right_path, left_path, right_path]
-            )
-            LOG.info(
-                f"Automatched position: {';'.join([','.join(map(str, p)) for p in automatch_])}"
+        if automatch.startswith("fm"):
+            points_l, points_r = match_points(
+                cv.imread(left_path.as_posix()), cv.imread(right_path.as_posix())
             )
         else:
-            automatch_ = [tuple(chunk.split(",")) for chunk in automatch.split(";")]  # type: ignore
-
-        q = match_lr(
-            FisheyeDecoder("equidistant"),
-            # odd
-            automatch_[1::2],
-            # even
-            automatch_[::2],
+            if automatch.startswith("gui"):
+                n_points_match = re.match(r"gui(\d+)", automatch)
+                n_points_default = 2
+                n_points = (
+                    int(n_points_match.group(1) or n_points_default)
+                    if n_points_match
+                    else n_points_default
+                )
+                automatch_ = _get_position_gui([left_path, right_path] * n_points)
+                LOG.info(
+                    f"Automatched position: {';'.join([','.join(map(str, p)) for p in automatch_])}"
+                )
+            else:
+                automatch_ = [
+                    (int(chunk.split(",")[0]), int(chunk.split(",")[1]))
+                    for chunk in automatch.split(";")
+                ]
+            points_l, points_r = automatch_[1::2], automatch_[::2]  # odd, even
+        vl, vr = match_lr(
+            transformer_after_encoder,
+            points_l,
+            points_r,
             radius=float(radius) if radius not in ["auto", "max"] else radius,  # type: ignore
             in_paths=[left_path, right_path],
         )
+        if automatch.startswith("fm"):
+            q = rotation_match_robust(vl, vr)
+        else:
+            q = rotation_match(vl, vr)
         LOG.info(f"Automatched quaternion: {q}")
         transformer_ = (
             transformer_until_encoder
