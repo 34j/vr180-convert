@@ -36,6 +36,7 @@ scikit-learn = "^1.4.2"
 numpy-quaternion = "^2023.0.3"
 strenum = "^0.4.15"
 python-xmp-toolkit = {version="^2.0.2", optional=true}
+seaborn = "^0.13.2"
 
 [tool.poetry.extras]
 xmp = ["python-xmp-toolkit"]
@@ -49,7 +50,7 @@ pytest-cov = "^5.0.0"
 optional = true
 
 [tool.poetry.group.docs.dependencies]
-myst-parser = { version = ">=0.16", python = ">=3.11"}
+myst-parser = { version = ">=0.16", python = ">=3.11", extras = ["linkify"] }
 sphinx = { version = ">=4.0", python = ">=3.11"}
 furo = { version = ">=2023.5.20", python = ">=3.11"}
 sphinx-autobuild = { version = ">=2024.0.0", python = ">=3.11"}
