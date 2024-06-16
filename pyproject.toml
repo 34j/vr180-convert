@@ -54,6 +54,9 @@ myst-parser = { version = ">=0.16", python = ">=3.11", extras = ["linkify"] }
 sphinx = { version = ">=4.0", python = ">=3.11"}
 furo = { version = ">=2023.5.20", python = ">=3.11"}
 sphinx-autobuild = { version = ">=2024.0.0", python = ">=3.11"}
+sphinx-copybutton = "^0.5.2"
+sphinx-notfound-page = "^1.0.2"
+sphinx-last-updated-by-git = "^0.3.7"
 
 [tool.semantic_release]
 version_toml = ["pyproject.toml:tool.poetry.version"]

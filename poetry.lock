@@ -1029,11 +1029,11 @@ files = [
 [package.dependencies]
 numpy = [
     {version = ">=1.21.0", markers = "python_version == \"3.9\" and platform_system == \"Darwin\" and platform_machine == \"arm64\""},
+    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
+    {version = ">=1.23.5", markers = "python_version >= \"3.11\" and python_version < \"3.12\""},
     {version = ">=1.21.4", markers = "python_version >= \"3.10\" and platform_system == \"Darwin\" and python_version < \"3.11\""},
     {version = ">=1.21.2", markers = "platform_system != \"Darwin\" and python_version >= \"3.10\" and python_version < \"3.11\""},
     {version = ">=1.19.3", markers = "platform_system == \"Linux\" and platform_machine == \"aarch64\" and python_version >= \"3.8\" and python_version < \"3.10\" or python_version > \"3.9\" and python_version < \"3.10\" or python_version >= \"3.9\" and platform_system != \"Darwin\" and python_version < \"3.10\" or python_version >= \"3.9\" and platform_machine != \"arm64\" and python_version < \"3.10\""},
-    {version = ">=1.23.5", markers = "python_version >= \"3.11\" and python_version < \"3.12\""},
-    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
 ]
 
 [[package]]
@@ -1088,8 +1088,8 @@ files = [
 [package.dependencies]
 numpy = [
     {version = ">=1.22.4", markers = "python_version < \"3.11\""},
-    {version = ">=1.23.2", markers = "python_version == \"3.11\""},
     {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
+    {version = ">=1.23.2", markers = "python_version == \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -1653,6 +1653,56 @@ sphinx = ">=4.0"
 docs = ["furo", "ipython", "myst-parser", "sphinx-copybutton", "sphinx-inline-tabs"]
 
 [[package]]
+name = "sphinx-copybutton"
+version = "0.5.2"
+description = "Add a copy button to each of your code cells."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "sphinx-copybutton-0.5.2.tar.gz", hash = "sha256:4cf17c82fb9646d1bc9ca92ac280813a3b605d8c421225fd9913154103ee1fbd"},
+    {file = "sphinx_copybutton-0.5.2-py3-none-any.whl", hash = "sha256:fb543fd386d917746c9a2c50360c7905b605726b9355cd26e9974857afeae06e"},
+]
+
+[package.dependencies]
+sphinx = ">=1.8"
+
+[package.extras]
+code-style = ["pre-commit (==2.12.1)"]
+rtd = ["ipython", "myst-nb", "sphinx", "sphinx-book-theme", "sphinx-examples"]
+
+[[package]]
+name = "sphinx-last-updated-by-git"
+version = "0.3.7"
+description = "Get the \"last updated\" time for each Sphinx page from Git"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "sphinx_last_updated_by_git-0.3.7-py3-none-any.whl", hash = "sha256:9937f235911aaec566a652b26952b29f530abb86f98e0fb67843227301636457"},
+    {file = "sphinx_last_updated_by_git-0.3.7.tar.gz", hash = "sha256:edfd4970d9778123d3d0d9c5c9a9e3d700867a080539eb2bfe01e7078ca1dc78"},
+]
+
+[package.dependencies]
+sphinx = ">=1.8"
+
+[[package]]
+name = "sphinx-notfound-page"
+version = "1.0.2"
+description = "Sphinx extension to build a 404 page with absolute URLs"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "sphinx_notfound_page-1.0.2-py3-none-any.whl", hash = "sha256:dbfb4fb05d8ccdaf28c19c3452231eeab73917fd475dcafebbf3babb84343800"},
+    {file = "sphinx_notfound_page-1.0.2.tar.gz", hash = "sha256:7b2759ca79cbaa44422325f540b91542b1ce411cd31217c20cd6ba1e6cffb5ec"},
+]
+
+[package.dependencies]
+sphinx = ">=5"
+
+[package.extras]
+doc = ["sphinx-autoapi", "sphinx-rtd-theme", "sphinx-tabs", "sphinxemoji"]
+test = ["tox"]
+
+[[package]]
 name = "sphinxcontrib-applehelp"
 version = "1.0.8"
 description = "sphinxcontrib-applehelp is a Sphinx extension which outputs Apple help books"
@@ -2079,4 +2129,4 @@ xmp = ["python-xmp-toolkit"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "55b7578ac2ebc7dfdbfa87e75419dd1bf95e4a4806e18495e356023b9ec31c06"
+content-hash = "e69cbe6412d36487ac509b4c364506e097c9f5f6856eb291782ff9d2df0af3a9"

@@ -28,6 +28,9 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
+    "sphinx_copybutton",
+    "notfound.extension",
+    "sphinx_last_updated_by_git",
 ]
 napoleon_google_docstring = False
 
