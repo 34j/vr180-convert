@@ -1,21 +1,21 @@
 # Math
 
-## Derivation
+## 3D Rotation Matching With Least Squares Method - Derivation
 
 It is known that
 
 $$
-\exists_2 q \in SU(2) \subset \mathbb{R}^4, R \in SO(3) \subset \mathbb{R}^{3 \times 3}, \forall a \in \mathbb{R}^3, (0, R a) = q * (a, 0) * q^{-1}
+\exists_2 q \in SU(2) \subset \mathbb{R}^4, \forall R \in SO(3) \subset \mathbb{R}^{3 \times 3}, \forall a \in \mathbb{R}^3, (0, R a) = q * (0, a) * q^{-1}
 $$
 
 where
 
 $$
-\forall (v_0, \bm{v}), (w_0,bm{w}) \in \mathbb{R}^4, (v_0, \bm{v}) * (w_0, \bm{w}) := (v_0 w_0 - \bm{v} \cdot \bm{w}, v_0 \bm{w} + w_0 \bm{v} + \bm{v} \times \bm{w})
+\forall (v_0, \vec{v}), (w_0,vec{w}) \in \mathbb{R}^4, (v_0, \vec{v}) * (w_0, \vec{w}) := (v_0 w_0 - \vec{v} \cdot \vec{w}, v_0 \vec{w} + w_0 \vec{v} + \vec{v} \times \vec{w})
 $$
 
 $$
-(q_0, \bm{q})^{-1} = \frac{(q_0, -\bm{q})}{\|q\|^2}
+(q_0, \vec{q})^{-1} = \frac{(q_0, -\vec{q})}{\|q\|^2}
 $$
 
 which shows that
@@ -25,7 +25,7 @@ f_l, f_r: SU(2) \to SO(3) \text{ or } \mathbb{R}^{3} \to \mathbb{R}^{3 \times 3}
 \forall p, q \in SU(2) \text{ or } \mathbb{R}^{3}, p * q = f_l(p) \begin{pmatrix} q_0 \\ q_1 \\ q_2 \\ q_3 \end{pmatrix} = f_r(q) \begin{pmatrix} p_0 \\ p_1 \\ p_2 \\ p_3 \end{pmatrix}
 $$
 
-Using this, as $\forall q \in \mathbb{R}^3, \|(0, \bm{q})\| = \|q\|$, we have
+Using this, as $\forall q \in \mathbb{R}^3, \|(0, \vec{q})\| = \|q\|$, we have
 
 $$
 \begin{aligned}
@@ -44,10 +44,10 @@ $$
 
 which means $E(q)$ is a quadratic form.
 
-As $B$ is symmetric, there exists an orthogonal matrix $P$ such that $B = P^T \Lambda P$ where $\Lambda = \mathrm{diag} \{\lambda_i\} (\lambda_1 < \dots < \lambda_4)$ is diagonal. Let $r = P q$, then
+As $B$ is symmetric, there exists an orthogonal matrix $P$ such that $B = P \Lambda P^{-1} = P \Lambda P^T$ where $\Lambda = \mathrm{diag} \{\lambda_i\} (\lambda_1 < \dots < \lambda_4)$ is diagonal. Let $r = P^T q$, then
 
 $$
-E(q) = (P q)^T D (P q) = r^T D r = \sum_i \lambda_i r_i^2
+E(q) = q^T P B P^T q = (P^T q)^T D (P^T q) = r^T D r = \sum_i \lambda_i r_i^2
 $$
 
 under
@@ -56,7 +56,7 @@ $$
 \| r \| = r^T r = q^T P^T P q = q^T q = 1
 $$
 
-and $E(q)$ is minimized when $r = (1, 0, 0, 0)^T$ and $q = P (1, 0, 0, 0)^T = v_1$ where $v_1$ is the eigenvector corresponding to $\lambda_1$.
+and $E(q)$ is minimized when $r = (1, 0, 0, 0)^T$ and $q = P r = P (1, 0, 0, 0)^T = v_1$ where $v_1$ is the eigenvector corresponding to $\lambda_1$.
 
 ## References
 
@@ -64,3 +64,4 @@ and $E(q)$ is minimized when $r = (1, 0, 0, 0)^T$ and $q = P (1, 0, 0, 0)^T = v_
 - [Showing the Correctness of Quaternion Rotation](https://erkaman.github.io/posts/quaternion_rotation.html#mjx-eqn-eqquatprod)
 - [クォータニオン計算便利ノート](https://www.mesw.co.jp/business/report/pdf/mss_18_07.pdf)
 - [ゲームプログラマのための数学の歩き方 - クォータニオンとリー群編](http://www.jp.square-enix.com/tech/library/pdf/CEDEC2021_SQEX_IMI_Quaternion_20210827_public.pdf)
+- [〔線形代数〕（実）2次形式の最大値問題 \- すーがくをがくすー](https://himajanai-himajin.hatenablog.com/entry/2022/08/26/170544#2-%E5%9B%BA%E6%9C%89%E5%80%A4%E3%82%92%E5%BE%97%E3%82%8B%E5%AF%BE%E8%A7%92%E5%8C%96-%E3%81%9D%E3%81%AE1)
