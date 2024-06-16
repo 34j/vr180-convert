@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.6.0 (2024-06-16)
+
+### Feature
+
+- Add automatch ([`1177d95`](https://github.com/34j/vr180-convert/commit/1177d956a65b8a56a3ac9dbef10ef546f2740ec0))
+
+### Documentation
+
+- Add more extensions ([`5e35a34`](https://github.com/34j/vr180-convert/commit/5e35a34c8092918c861e5577dd45d7281408b683))
+- Add myst_enable_extensions (#61) ([`1873206`](https://github.com/34j/vr180-convert/commit/1873206dc6bfc1f09f54b25a17d1af318d2a2e80))
+- Add math docs (#60) ([`f255f70`](https://github.com/34j/vr180-convert/commit/f255f70cecfdce110bc1729587bfa3688cc8d551))
+
 ## v0.5.1 (2024-05-23)
 
 ### Fix
