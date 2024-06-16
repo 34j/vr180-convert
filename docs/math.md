@@ -1,6 +1,6 @@
 # Math
 
-## Derivation
+## 3D Rotation Matching With Least Squares Method - Derivation
 
 It is known that
 
