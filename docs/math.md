@@ -64,3 +64,4 @@ and $E(q)$ is minimized when $r = (1, 0, 0, 0)^T$ and $q = P r = P (1, 0, 0, 0)^
 - [Showing the Correctness of Quaternion Rotation](https://erkaman.github.io/posts/quaternion_rotation.html#mjx-eqn-eqquatprod)
 - [クォータニオン計算便利ノート](https://www.mesw.co.jp/business/report/pdf/mss_18_07.pdf)
 - [ゲームプログラマのための数学の歩き方 - クォータニオンとリー群編](http://www.jp.square-enix.com/tech/library/pdf/CEDEC2021_SQEX_IMI_Quaternion_20210827_public.pdf)
+- [〔線形代数〕（実）2次形式の最大値問題 \- すーがくをがくすー](https://himajanai-himajin.hatenablog.com/entry/2022/08/26/170544#2-%E5%9B%BA%E6%9C%89%E5%80%A4%E3%82%92%E5%BE%97%E3%82%8B%E5%AF%BE%E8%A7%92%E5%8C%96-%E3%81%9D%E3%81%AE1)
