@@ -5,7 +5,7 @@
 It is known that
 
 $$
-\exists_2 q \in SU(2) \subset \mathbb{R}^4, R \in SO(3) \subset \mathbb{R}^{3 \times 3}, \forall a \in \mathbb{R}^3, (0, R a) = q * (a, 0) * q^{-1}
+\exists_2 q \in SU(2) \subset \mathbb{R}^4, \forall R \in SO(3) \subset \mathbb{R}^{3 \times 3}, \forall a \in \mathbb{R}^3, (0, R a) = q * (0, a) * q^{-1}
 $$
 
 where
@@ -44,10 +44,10 @@ $$
 
 which means $E(q)$ is a quadratic form.
 
-As $B$ is symmetric, there exists an orthogonal matrix $P$ such that $B = P^T \Lambda P$ where $\Lambda = \mathrm{diag} \{\lambda_i\} (\lambda_1 < \dots < \lambda_4)$ is diagonal. Let $r = P q$, then
+As $B$ is symmetric, there exists an orthogonal matrix $P$ such that $B = P \Lambda P^{-1} = P \Lambda P^T$ where $\Lambda = \mathrm{diag} \{\lambda_i\} (\lambda_1 < \dots < \lambda_4)$ is diagonal. Let $r = P^T q$, then
 
 $$
-E(q) = (P q)^T D (P q) = r^T D r = \sum_i \lambda_i r_i^2
+E(q) = q^T P B P^T q = (P^T q)^T D (P^T q) = r^T D r = \sum_i \lambda_i r_i^2
 $$
 
 under
@@ -56,7 +56,7 @@ $$
 \| r \| = r^T r = q^T P^T P q = q^T q = 1
 $$
 
-and $E(q)$ is minimized when $r = (1, 0, 0, 0)^T$ and $q = P (1, 0, 0, 0)^T = v_1$ where $v_1$ is the eigenvector corresponding to $\lambda_1$.
+and $E(q)$ is minimized when $r = (1, 0, 0, 0)^T$ and $q = P r = P (1, 0, 0, 0)^T = v_1$ where $v_1$ is the eigenvector corresponding to $\lambda_1$.
 
 ## References
 
