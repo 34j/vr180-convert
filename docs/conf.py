@@ -84,6 +84,24 @@ def run_apidoc(_: Any) -> None:
     )
 
 
+myst_enable_extensions = [
+    "amsmath",
+    # "attrs_inline",
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "fieldlist",
+    "html_admonition",
+    "html_image",
+    "linkify",
+    "replacements",
+    "smartquotes",
+    "strikethrough",
+    # "substitution",
+    "tasklist",
+]
+
+
 def setup(app: Sphinx) -> None:
     """Setup sphinx."""
     app.connect("builder-inited", run_apidoc)
