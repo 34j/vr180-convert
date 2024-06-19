@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.1 (2024-06-19)
+
+### Fix
+
+- Fix feature matching (#63) ([`18cd8aa`](https://github.com/34j/vr180-convert/commit/18cd8aa11afbd5b9bd09c329aa6ea736d5271980))
+
 ## v0.6.0 (2024-06-16)
 
 ### Feature
