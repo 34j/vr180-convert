@@ -103,6 +103,10 @@ v1c lr left.jpg right.jpg --automatch fm
 Since matching by AKAZE involves false detections, matching points with high loss are considered outliers, and the least-squares method is repeated multiple times to remove them.
 Checking if the image should be swapped using feature matching might be theoretically possible but not implemented.
 
+#### See Also
+
+- [1.1.16. Robustness regression: outliers and modeling errors](https://scikit-learn.org/stable/modules/linear_model.html#robustness-regression-outliers-and-modeling-errors)
+
 - Manually specifying the corresponding points using the GUI:
 
 ```shell
