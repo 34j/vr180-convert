@@ -255,10 +255,6 @@ def lr(
             points_l, points_r, kp1, kp2, matches, img_l, img_r = match_points(
                 img_l, img_r, scale=scale
             )
-            points_l, points_r = (
-                points_r,
-                points_l,
-            )  # TODO: don't understand why this is needed
         else:
             if automatch.startswith("gui"):
                 n_points_match = re.match(r"gui(\d+)", automatch)
@@ -277,7 +273,7 @@ def lr(
                     (int(chunk.split(",")[0]), int(chunk.split(",")[1]))
                     for chunk in automatch.split(";")
                 ]
-            points_l, points_r = automatch_[1::2], automatch_[::2]  # odd, even
+            points_l, points_r = automatch_[::2], automatch_[1::2]  # even, odd
 
         # transform matched points
         vl, vr = match_lr(
@@ -301,12 +297,25 @@ def lr(
         LOG.info(f"Automatched quaternion: {q}")
 
         # insert the rotation transformer
-        transformer_ = (
-            transformer_until_encoder
-            * Euclidean3DRotator(q)
-            * transformer_after_encoder,
-            transformer_,
-        )
+        phi = np.arccos(q.w)
+        half = True
+        if half:
+            half_q = np.sin(phi / 2) / np.sin(phi) * q + 0.5
+            transformer_ = (
+                transformer_until_encoder
+                * Euclidean3DRotator(np.conj(half_q))
+                * transformer_after_encoder,
+                transformer_until_encoder
+                * Euclidean3DRotator(half_q)
+                * transformer_after_encoder,
+            )
+        else:
+            transformer_ = (
+                transformer_,
+                transformer_until_encoder
+                * Euclidean3DRotator(q)
+                * transformer_after_encoder,
+            )
         LOG.info(f"Automatched transformer: {transformer_}")
 
     # if swap:
