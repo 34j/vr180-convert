@@ -537,10 +537,16 @@ def xmp(
 @app.command()
 def swap(
     in_paths: Annotated[list[Path], typer.Argument(help="Image paths")],
+    overwrite: Annotated[
+        bool, typer.Option(help="Overwrite the original images")
+    ] = True,
 ) -> None:
     """Swap left and right images."""
     for in_path in in_paths:
-        out_path = in_path.with_suffix(f".swap{in_path.suffix}")
+        if not overwrite:
+            out_path = in_path.with_suffix(f".swap{in_path.suffix}")
+        else:
+            out_path = in_path
         image = cv.imread(in_path.as_posix())
         left, right = image[:, : image.shape[1] // 2], image[:, image.shape[1] // 2 :]
         image_swapped = np.hstack([right, left])
