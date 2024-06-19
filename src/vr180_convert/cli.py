@@ -163,6 +163,12 @@ def lr(
             help='Calibrate rotation. e.g. "0,0;0,0;1,1;1,1". If "gui", use GUI'
         ),
     ] = "",
+    savematch: Annotated[
+        bool,
+        typer.Option(
+            help="Whether to save the match image (only available when automatch=fm)"
+        ),
+    ] = False,
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
     if swap:
@@ -356,7 +362,7 @@ def lr(
         if out_path == Path("")
         else out_path / filename_default if out_path.is_dir() else out_path
     )
-    if automatch.startswith("fm"):
+    if automatch.startswith("fm") and savematch:
         cv.imwrite(
             out_path.with_suffix(f".match{out_path.suffix}").as_posix(), img_match
         )
@@ -537,10 +543,16 @@ def xmp(
 @app.command()
 def swap(
     in_paths: Annotated[list[Path], typer.Argument(help="Image paths")],
+    overwrite: Annotated[
+        bool, typer.Option(help="Overwrite the original images")
+    ] = True,
 ) -> None:
     """Swap left and right images."""
     for in_path in in_paths:
-        out_path = in_path.with_suffix(f".swap{in_path.suffix}")
+        if not overwrite:
+            out_path = in_path.with_suffix(f".swap{in_path.suffix}")
+        else:
+            out_path = in_path
         image = cv.imread(in_path.as_posix())
         left, right = image[:, : image.shape[1] // 2], image[:, image.shape[1] // 2 :]
         image_swapped = np.hstack([right, left])
