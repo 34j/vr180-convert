@@ -163,6 +163,12 @@ def lr(
             help='Calibrate rotation. e.g. "0,0;0,0;1,1;1,1". If "gui", use GUI'
         ),
     ] = "",
+    savematch: Annotated[
+        bool,
+        typer.Option(
+            help="Whether to save the match image (only available when automatch=fm)"
+        ),
+    ] = False,
 ) -> None:
     """Remap a pair of fisheye images to a pair of SBS equirectangular images."""
     if swap:
@@ -356,7 +362,7 @@ def lr(
         if out_path == Path("")
         else out_path / filename_default if out_path.is_dir() else out_path
     )
-    if automatch.startswith("fm"):
+    if automatch.startswith("fm") and savematch:
         cv.imwrite(
             out_path.with_suffix(f".match{out_path.suffix}").as_posix(), img_match
         )
