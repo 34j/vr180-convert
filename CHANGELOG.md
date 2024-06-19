@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.6.2 (2024-06-19)
+
+### Fix
+
+- Add option to save matched image in `lr` and overwrite images in `swap` (#64) ([`307c3f0`](https://github.com/34j/vr180-convert/commit/307c3f08d71a25093c52340f07cdacf5bcd59139))
+
 ## v0.6.1 (2024-06-19)
 
 ### Fix
