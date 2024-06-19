@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from logging import getLogger
 from pathlib import Path
-from typing import Literal, Sequence
+from typing import Any, Literal, Sequence
 
 import cv2 as cv
 import numpy as np
@@ -138,7 +138,7 @@ def rotation_match(
     B = np.einsum("jik,jlk->il", S, S)
     eigenvalues, eigenvectors = np.linalg.eig(B)
     q = eigenvectors[:, np.argmin(eigenvalues)]
-    E = eigenvalues.min()
+    E = np.sqrt(eigenvalues.min()) / len(points)
     LOG.debug(f"Error: {E}")
     return as_quat_array([q[..., 3], q[..., 0], q[..., 1], q[..., 2]])
 
@@ -146,8 +146,8 @@ def rotation_match(
 def rotation_match_robust(
     points_to_be_rotated: NDArray,
     points: NDArray,
-    n_iter: int = 4,
-    percentile: float = 0.8,
+    n_iter: int = 15,
+    quantile: float = 0.9,
 ) -> quaternion:
     """
     Match the rotation of two sets of 3d points.
@@ -172,23 +172,34 @@ def rotation_match_robust(
     https://lisyarus.github.io/blog/posts/3d-shape-matching-with-quaternions.html
 
     """
+    bad_idx = np.full(len(points), False)
     for i in range(n_iter):
-        q = rotation_match(points_to_be_rotated, points)
+        q = rotation_match(points_to_be_rotated=points_to_be_rotated, points=points)
         if i == n_iter - 1:
             break
         error = np.linalg.norm(
             rotate_vectors(q, points_to_be_rotated) - points, axis=-1
         )
-        threshold = np.percentile(error, percentile * 100)
-        error_too_large = error > threshold
-        points_to_be_rotated = points_to_be_rotated[~error_too_large]
-        points = points[~error_too_large]
-    return q
+        threshold = np.quantile(error, quantile)
+        bad_idx_current = error > threshold
+        bad_idx[~bad_idx] = bad_idx_current
+        points_to_be_rotated = points_to_be_rotated[~bad_idx_current]
+        points = points[~bad_idx_current]
+        LOG.debug(
+            f"Removed {bad_idx_current.sum()} outliers, {len(points)} points left."
+        )
+    return q, bad_idx
 
 
-def match_points(
-    image1: NDArray, image2: NDArray, *, scale: float = 1
-) -> tuple[Sequence[tuple[float, float]], Sequence[tuple[float, float]]]:
+def match_points(image1: NDArray, image2: NDArray, *, scale: float = 1) -> tuple[
+    Sequence[tuple[float, float]],
+    Sequence[tuple[float, float]],
+    NDArray[Any],
+    NDArray[Any],
+    NDArray[Any],
+    NDArray[Any],
+    NDArray[Any],
+]:
     """
     Match the points in two images.
 
@@ -226,7 +237,15 @@ def match_points(
     if scale != 1:
         points1_ /= scale
         points2_ /= scale
-    return points1_, points2_
+    return (
+        points1_,
+        points2_,
+        np.array(kp1),
+        np.array(kp2),
+        np.array(matches),
+        image1,
+        image2,
+    )
 
 
 def match_lr(

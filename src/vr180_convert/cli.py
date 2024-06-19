@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from datetime import datetime, timezone
 from enum import auto
@@ -9,6 +11,7 @@ from typing import Any, Sequence
 import cv2 as cv
 import numpy as np
 import typer
+from numpy.typing import NDArray
 from quaternion import *  # noqa
 from rich.logging import RichHandler
 from strenum import StrEnum
@@ -76,8 +79,14 @@ class _BorderTypes(StrEnum):
     BORDER_ISOLATED = auto()
 
 
-def _get_position_gui(image_paths: Sequence[Path]) -> list[tuple[int, int]]:
+def _get_position_gui(
+    image_paths: Sequence[Path | NDArray[Any]],
+) -> list[tuple[int, int]]:
     """Get the position of the GUI window."""
+    images = [
+        cv.imread(image_path.as_posix()) if isinstance(image_path, Path) else image_path
+        for image_path in image_paths
+    ]
     window_name = "Select position"
     cv.namedWindow(window_name, cv.WND_PROP_FULLSCREEN)
     cv.setWindowProperty(window_name, cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
@@ -92,14 +101,14 @@ def _get_position_gui(image_paths: Sequence[Path]) -> list[tuple[int, int]]:
             LOG.info(f"Position {i}: ({x}, {y})")
 
     cv.setMouseCallback(window_name, on_mouse)
-    cv.imshow(window_name, cv.imread(image_paths[i].as_posix()))
+    cv.imshow(window_name, images[i])
     while True:
         cv.waitKey(10)
         if len(res) == i + 1:
             i += 1
             if i == len(image_paths):
                 break
-            cv.imshow(window_name, cv.imread(image_paths[i].as_posix()))
+            cv.imshow(window_name, images[i])
     cv.destroyAllWindows()
     return res
 
@@ -235,9 +244,18 @@ def lr(
         )
         LOG.debug(f"{transformer_until_encoder=}, {transformer_after_encoder=}")
 
+        # match points using the original images
+        img_l, img_r = cv.imread(left_path.as_posix()), cv.imread(right_path.as_posix())
         if automatch.startswith("fm"):
-            points_l, points_r = match_points(
-                cv.imread(left_path.as_posix()), cv.imread(right_path.as_posix())
+            scale_match = re.match(r"fm([\d\.]+)", automatch)
+            scale_default = 1
+            scale = (
+                float(scale_match.group(1) or scale_default)
+                if scale_match
+                else scale_default
+            )
+            points_l, points_r, kp1, kp2, matches, img_l, img_r = match_points(
+                img_l, img_r, scale=scale
             )
         else:
             if automatch.startswith("gui"):
@@ -248,7 +266,7 @@ def lr(
                     if n_points_match
                     else n_points_default
                 )
-                automatch_ = _get_position_gui([left_path, right_path] * n_points)
+                automatch_ = _get_position_gui([img_l, img_r] * n_points)
                 LOG.info(
                     f"Automatched position: {';'.join([','.join(map(str, p)) for p in automatch_])}"
                 )
@@ -257,7 +275,9 @@ def lr(
                     (int(chunk.split(",")[0]), int(chunk.split(",")[1]))
                     for chunk in automatch.split(";")
                 ]
-            points_l, points_r = automatch_[1::2], automatch_[::2]  # odd, even
+            points_l, points_r = automatch_[::2], automatch_[1::2]  # even, odd
+
+        # transform matched points
         vl, vr = match_lr(
             transformer_after_encoder,
             points_l,
@@ -265,17 +285,39 @@ def lr(
             radius=float(radius) if radius not in ["auto", "max"] else radius,  # type: ignore
             in_paths=[left_path, right_path],
         )
+
+        # now vl, vr is normalized, we can do 3d rotation match
         if automatch.startswith("fm"):
-            q = rotation_match_robust(vl, vr)
+            from random import sample
+
+            q, bad_idx = rotation_match_robust(vl, vr)
+            img_match = cv.drawMatches(
+                img_l, kp1, img_r, kp2, sample(list(matches[~bad_idx]), 100), None
+            )
         else:
             q = rotation_match(vl, vr)
         LOG.info(f"Automatched quaternion: {q}")
-        transformer_ = (
-            transformer_until_encoder
-            * Euclidean3DRotator(q)
-            * transformer_after_encoder,
-            transformer_,
-        )
+
+        # insert the rotation transformer
+        phi = np.arccos(q.w)
+        half = True
+        if half:
+            half_q = np.sin(phi / 2) / np.sin(phi) * q + 0.5
+            transformer_ = (
+                transformer_until_encoder
+                * Euclidean3DRotator(np.conj(half_q))
+                * transformer_after_encoder,
+                transformer_until_encoder
+                * Euclidean3DRotator(half_q)
+                * transformer_after_encoder,
+            )
+        else:
+            transformer_ = (
+                transformer_,
+                transformer_until_encoder
+                * Euclidean3DRotator(q)
+                * transformer_after_encoder,
+            )
         LOG.info(f"Automatched transformer: {transformer_}")
 
     # if swap:
@@ -309,15 +351,20 @@ def lr(
         f"{Path(left_path).stem}-"
         + f"{Path(right_path).stem}{name_unique_content}.{DEFAULT_EXTENSION}"
     )
+    out_path = (
+        Path(left_path).parent / filename_default
+        if out_path == Path("")
+        else out_path / filename_default if out_path.is_dir() else out_path
+    )
+    if automatch.startswith("fm"):
+        cv.imwrite(
+            out_path.with_suffix(f".match{out_path.suffix}").as_posix(), img_match
+        )
     apply_lr(
         transformer=transformer_,
         left_path=left_path,
         right_path=right_path,
-        out_path=(
-            Path(left_path).parent / filename_default
-            if out_path == Path("")
-            else out_path / filename_default if out_path.is_dir() else out_path
-        ),
+        out_path=out_path,
         radius=float(radius) if radius not in ["auto", "max"] else radius,  # type: ignore
         size_output=tuple(map(int, size.split("x"))),  # type: ignore
         interpolation=getattr(cv, interpolation.upper()),

@@ -94,11 +94,26 @@ v1c lr left.jpg right.jpg --radius max # min(width, height) / 2
 
 [Rotation matching using the least-squares method](https://lisyarus.github.io/blog/posts/3d-shape-matching-with-quaternions.html) can be performed by clicking corresponding points that can be regarded as infinitely far away from the camera.
 
+- Using AKAZE as a feature matcher:
+
+```shell
+v1c lr left.jpg right.jpg --automatch fm
+```
+
+Since matching by AKAZE involves false detections, matching points with high loss are considered outliers, and the least-squares method is repeated multiple times to remove them.
+Checking if the image should be swapped using feature matching might be theoretically possible but not implemented.
+
+#### See Also
+
+- [1.1.16. Robustness regression: outliers and modeling errors](https://scikit-learn.org/stable/modules/linear_model.html#robustness-regression-outliers-and-modeling-errors)
+
+- Manually specifying the corresponding points using the GUI:
+
 ```shell
 v1c lr left.jpg right.jpg --automatch gui
 ```
 
-You can also specify the corresponding points manually:
+- Manually specifying the corresponding points using the CLI:
 
 ```shell
 v1c lr left.jpg right.jpg --automatch "0,0;0,0;1,1;1,1" # left_x1,left_y1;right_x1,right_y1;...
@@ -169,6 +184,12 @@ For `from_rotation_vector`, please refer to the [numpy-quaternion documentation]
 ### Single image conversion
 
 To convert a single image, use `v1c s` instead.
+
+### Running commands for all images in a directory
+
+```shell
+find left_dir -type f -name '*.jpg' -exec v1c lr {} right_dir --automatch fm --radius max -ac 0 --out-path out \;
+```
 
 ### Help
 
