@@ -179,11 +179,11 @@ def lr(
     if left_path.is_dir() and not right_path.is_dir():
         # find closest time-matched right image
         # sort with time
-        right_time = right_path.stat().st_mtime
+        right_time = right_path.stat().st_ctime
         left_path_candidates = sorted(
             left_path.rglob("*"),
             key=lambda p: abs(
-                p.stat().st_mtime - right_time + autosearch_timestamp_calib_r_earlier_l
+                p.stat().st_ctime - right_time + autosearch_timestamp_calib_r_earlier_l
             ),
             reverse=False,
         )
@@ -198,11 +198,11 @@ def lr(
     elif not left_path.is_dir() and right_path.is_dir():
         # find closest time-matched left image
         # sort with time
-        left_time = left_path.stat().st_mtime
+        left_time = left_path.stat().st_ctime
         right_path_candidates = sorted(
             right_path.rglob("*"),
             key=lambda p: abs(
-                p.stat().st_mtime - left_time - autosearch_timestamp_calib_r_earlier_l
+                p.stat().st_ctime - left_time - autosearch_timestamp_calib_r_earlier_l
             ),
             reverse=False,
         )
@@ -219,9 +219,9 @@ def lr(
 
     LOG.info(
         f"L: {left_path}"
-        f"@{datetime.fromtimestamp(left_path.stat().st_mtime, timezone.utc)}, "
+        f"@{datetime.fromtimestamp(left_path.stat().st_ctime, timezone.utc)}, "
         f"R: {right_path}"
-        f"@{datetime.fromtimestamp(right_path.stat().st_mtime, timezone.utc)}"
+        f"@{datetime.fromtimestamp(right_path.stat().st_ctime, timezone.utc)}"
     )
 
     # evaluate automatch
