@@ -32,11 +32,11 @@ rich = ">=10"
 typer = "^0.12.0"
 opencv-python = "^4.9.0.80"
 attrs = "^23.2.0"
-scikit-learn = "^1.4.2"
 numpy-quaternion = "^2023.0.3"
 strenum = "^0.4.15"
 python-xmp-toolkit = {version="^2.0.2", optional=true}
 seaborn = "^0.13.2"
+ivy = "^1.0.0.4"
 
 [tool.poetry.extras]
 xmp = ["python-xmp-toolkit"]
@@ -103,6 +103,7 @@ target-version = "py38"
 line-length = 110
 unsafe-fixes = true
 ignore = [
+    "D105", # Missing docstring in magic method
     "D203", # 1 blank line required before class docstring
     "D212", # Multi-line docstring summary should start at the first line
     "D100", # Missing docstring in public module

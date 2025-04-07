@@ -5,12 +5,10 @@ from pathlib import Path
 
 import cv2 as cv
 import numpy as np
-from numpy.typing import NDArray
+from ivy import Array
 
 
-def generate_test_image(
-    size: int = 2048, path: str | Path | None = None
-) -> NDArray[np.uint8]:
+def generate_test_image(size: int = 2048, path: str | Path | None = None) -> Array:
     """
     Generate a test image.
 
@@ -24,7 +22,7 @@ def generate_test_image(
 
     Returns
     -------
-    NDArray[np.uint8]
+    Array
         The generated image.
 
     """

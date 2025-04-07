@@ -1,147 +1,21 @@
 from __future__ import annotations
 
 import warnings
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from typing import Any, Generic, Literal, Sequence, TypeVar
 
 import attrs
 import numpy as np
-from numpy.typing import NDArray
+from ivy import Array
 from quaternion import quaternion, rotate_vectors
-from sklearn.base import BaseEstimator, TransformerMixin
 
+from .base import RemapperBase
 
-class TransformerBase(
-    BaseEstimator,
-    TransformerMixin,
-    metaclass=ABCMeta,
-):
-    """Base class for transformers."""
-
-    # def fit(self, image: NDArray, **kwargs: Any) -> None:
-    #     pass
-
-    @abstractmethod
-    def transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
-        """
-        Transform the input coordinates.
-
-        Parameters
-        ----------
-        x : NDArray
-            x (left-right) coordinates.
-        y : NDArray
-            y (up-down) coordinates.
-        **kwargs : Any
-            Any additional keyword arguments.
-
-        Returns
-        -------
-        tuple[NDArray, NDArray]
-            x and y coordinates after transformation.
-
-        """
-        pass
-
-    @abstractmethod
-    def inverse_transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
-        """
-        Inverse transform the input coordinates.
-
-        Parameters
-        ----------
-        x : NDArray
-            x (left-right) coordinates.
-        y : NDArray
-            y (up-down) coordinates.
-        **kwargs : Any
-            Any additional keyword arguments.
-
-        Returns
-        -------
-        tuple[NDArray, NDArray]
-            x and y coordinates after transformation.
-
-        """
-
-    def __mul__(self, other: TransformerBase) -> MultiTransformer:
-        """Multiply two transformers together."""
-        if isinstance(self, MultiTransformer) and isinstance(other, MultiTransformer):
-            return MultiTransformer(
-                transformers=[*self.transformers, *other.transformers]
-            )
-        if isinstance(self, MultiTransformer):
-            return MultiTransformer(transformers=[*self.transformers, other])
-        if isinstance(other, MultiTransformer):
-            return MultiTransformer(transformers=[self, *other.transformers])
-        return MultiTransformer(transformers=[self, other])
-
-
-T = TypeVar("T", bound=TransformerBase)
+T = TypeVar("T", bound=RemapperBase)
 
 
 @attrs.define()
-class MultiTransformer(TransformerBase):
-    """A transformer that applies multiple transformers in sequence."""
-
-    transformers: list[TransformerBase]
-
-    def transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
-        for transformer in self.transformers:
-            x, y = transformer.transform(x, y, **kwargs)
-        return x, y
-
-    def inverse_transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
-        for transformer in reversed(self.transformers):
-            x, y = transformer.inverse_transform(x, y, **kwargs)
-        return x, y
-
-
-def get_radius(input: NDArray, *, threshold: int = 10) -> float:
-    """
-    Estimate the radius of the circle in the image.
-
-    Parameters
-    ----------
-    input : NDArray
-        The input image.
-    threshold : int, optional
-        The threshold to determine if a pixel is black, by default 10
-
-    Returns
-    -------
-    float
-        The estimated radius.
-
-    """
-    height, width = input.shape[:2]
-    if width > height:
-        center_row = input[height // 2, :, :]
-    else:
-        center_row = input[:, width // 2, :]
-    del height, width
-
-    # determine if a pixel is black
-    center_row_is_black = np.mean(center_row, axis=-1) < threshold
-    center_row_is_black_deriv = np.diff(center_row_is_black.astype(int))
-
-    # first and last 1 in the derivative
-    center_row_black_start = np.where(center_row_is_black_deriv == 1)[0][0]
-    center_row_black_end = np.where(center_row_is_black_deriv == -1)[0][-1]
-    radius = (center_row_black_end - center_row_black_start) / 2
-    return radius
-
-
-@attrs.define()
-class NormalizeTransformer(TransformerBase):
+class NormalizeRemapper(RemapperBase):
     """Normalize the coordinates to [-1, 1]."""
 
     center: tuple[float, float] | None = None
@@ -150,9 +24,7 @@ class NormalizeTransformer(TransformerBase):
     """The scale of the image. If "min" or None, the scale is the minimum of the width and height.
     If "max", the scale is the maximum of the width and height."""
 
-    def transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         center = self.center or (x.shape[1] / 2, x.shape[0] / 2)
         scale = (
             min(x.shape[1], x.shape[0])
@@ -163,9 +35,9 @@ class NormalizeTransformer(TransformerBase):
         y = (y - center[1]) / scale * 2
         return x, y
 
-    def inverse_transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+    def inverse_remap(
+        self, x: Array, y: Array, /, **kwargs: Any
+    ) -> tuple[Array, Array]:
         center = self.center or (x.shape[1] / 2, x.shape[0] / 2)
         scale = (
             min(x.shape[1], x.shape[0])
@@ -178,15 +50,15 @@ class NormalizeTransformer(TransformerBase):
 
 
 # @attrs.define()
-# class AutoDetectRadiusNormalizeTransformer(NormalizeTransformer):
-#     def fit(self, image: NDArray, **kwargs: Any) -> None:
+# class AutoDetectRadiusNormalizeRemapper(NormalizeRemapper):
+#     def fit(self, image: Array, **kwargs: Any) -> None:
 #         radius = get_radius(image)
 #         self.center = (image.shape[1] // 2, image.shape[0] // 2)
 #         self.scale = (radius, radius)
 
 
 @attrs.define()
-class DenormalizeTransformer(TransformerBase):
+class DenormalizeRemapper(RemapperBase):
     """Denormalize the coordinates from [-1, 1] to the original image size."""
 
     scale: tuple[float, float]
@@ -194,18 +66,16 @@ class DenormalizeTransformer(TransformerBase):
     center: tuple[float, float]
     """The center of the image. Recommended to be the center of the result image."""
 
-    def transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         scale = self.scale
         center = self.center
         x = x * scale[0] + center[0]
         y = y * scale[1] + center[1]
         return x, y
 
-    def inverse_transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+    def inverse_remap(
+        self, x: Array, y: Array, /, **kwargs: Any
+    ) -> tuple[Array, Array]:
         scale = self.scale
         center = self.center
         x = (x - center[0]) / scale[0]
@@ -214,28 +84,28 @@ class DenormalizeTransformer(TransformerBase):
 
 
 @attrs.define()
-class PolarRollTransformer(TransformerBase):
+class PolarRollRemapper(RemapperBase):
     """Transform using polar coordinates."""
 
     @abstractmethod
     def transform_polar(
-        self, theta: NDArray, roll: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         """
         Transform using polar coordinates.
 
         Parameters
         ----------
-        theta : NDArray
+        theta : Array
             The distance or angle from the center (front-facing direction)
-        roll : NDArray
+        roll : Array
             The angle around the center (front-facing direction)
         **kwargs : Any
             Any additional keyword arguments.
 
         Returns
         -------
-        tuple[NDArray, NDArray]
+        tuple[Array, Array]
             theta and roll after transformation.
 
         """
@@ -243,31 +113,29 @@ class PolarRollTransformer(TransformerBase):
 
     @abstractmethod
     def inverse_transform_polar(
-        self, theta: NDArray, roll: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         """
         Inverse transform using polar coordinates.
 
         Parameters
         ----------
-        theta : NDArray
+        theta : Array
             The distance or angle from the center (front-facing direction)
-        roll : NDArray
+        roll : Array
             The angle around the center (front-facing direction)
         **kwargs : Any
             Any additional keyword arguments.
 
         Returns
         -------
-        tuple[NDArray, NDArray]
+        tuple[Array, Array]
             theta and roll after transformation.
 
         """
         pass
 
-    def transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         theta = np.sqrt(x**2 + y**2)
         roll = np.arctan2(y, x)
         theta, roll = self.transform_polar(theta, roll, **kwargs)
@@ -275,9 +143,9 @@ class PolarRollTransformer(TransformerBase):
         y = theta * np.sin(roll)
         return x, y
 
-    def inverse_transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+    def inverse_remap(
+        self, x: Array, y: Array, /, **kwargs: Any
+    ) -> tuple[Array, Array]:
         theta = np.sqrt(x**2 + y**2)
         roll = np.arctan2(y, x)
         theta, roll = self.inverse_transform_polar(theta, roll, **kwargs)
@@ -287,7 +155,7 @@ class PolarRollTransformer(TransformerBase):
 
 
 @attrs.define()
-class RectilinearDecoder(PolarRollTransformer):
+class RectilinearDecoder(PolarRollRemapper):
     """Encodes rectilinear image."""
 
     # https://en.wikipedia.org/wiki/Image_sensor_format
@@ -336,19 +204,19 @@ class RectilinearDecoder(PolarRollTransformer):
         return 2 * self.focal_length / self.sensor_width_mm
 
     def transform_polar(
-        self, theta: NDArray, roll: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         return np.tan(theta) * self.factor, roll
 
     def inverse_transform_polar(
-        self, theta: NDArray, roll: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         # fov = 2 arctan sensor_width / (2 * focal_length)
         return np.arctan(theta / self.factor), roll
 
 
 @attrs.define()
-class FisheyeEncoder(PolarRollTransformer):
+class FisheyeEncoder(PolarRollRemapper):
     """Encodes fisheye image."""
 
     mapping_type: Literal[
@@ -357,8 +225,8 @@ class FisheyeEncoder(PolarRollTransformer):
     """The mapping type of the fisheye image."""
 
     def transform_polar(
-        self, theta: NDArray, roll: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         """[-1, 1] -> [-pi/2, pi/2]."""
         if self.mapping_type == "rectilinear":
             return np.arctan(theta), roll
@@ -377,8 +245,8 @@ class FisheyeEncoder(PolarRollTransformer):
             )
 
     def inverse_transform_polar(
-        self, theta: NDArray, roll: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         """[-pi/2, pi/2] -> [-1, 1]."""
         if self.mapping_type == "rectilinear":
             return np.tan(theta), roll
@@ -398,28 +266,26 @@ class FisheyeEncoder(PolarRollTransformer):
 
 
 @attrs.define()
-class InverseTransformer(TransformerBase, Generic[T]):
-    """Transformer that calls inverse_transform() in transform() and vice versa."""
+class InverseRemapper(RemapperBase, Generic[T]):
+    """Remapper that calls inverse_transform() in transform() and vice versa."""
 
     transformer: T
     """The transformer to be inverted."""
 
-    def transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
-        return self.transformer.inverse_transform(x, y, **kwargs)
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
+        return self.transformer.inverse_remap(x, y, **kwargs)
 
-    def inverse_transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
-        return self.transformer.transform(x, y, **kwargs)
+    def inverse_remap(
+        self, x: Array, y: Array, /, **kwargs: Any
+    ) -> tuple[Array, Array]:
+        return self.transformer.remap(x, y, **kwargs)
 
 
 def FisheyeDecoder(
     mapping_type: Literal[
         "rectilinear", "stereographic", "equidistant", "equisolid", "orthographic"
     ]
-) -> InverseTransformer[FisheyeEncoder]:
+) -> InverseRemapper[FisheyeEncoder]:
     """
     Decodes fisheye image.
 
@@ -430,15 +296,15 @@ def FisheyeDecoder(
 
     Returns
     -------
-    InverseTransformer
+    InverseRemapper
         The fisheye decoder.
 
     """
-    return InverseTransformer(FisheyeEncoder(mapping_type))
+    return InverseRemapper(FisheyeEncoder(mapping_type))
 
 
 @attrs.define()
-class PolynomialScaler(PolarRollTransformer):
+class PolynomialScaler(PolarRollRemapper):
     """Scale the polar coordinates using polynomial."""
 
     coefs_reverse: Sequence[float] = [0, 1]
@@ -446,41 +312,39 @@ class PolynomialScaler(PolarRollTransformer):
     [0, 1] means y = 0 + 1 * x."""
 
     def transform_polar(
-        self, theta: NDArray, roll: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         return np.polyval(np.flip(self.coefs_reverse), theta), roll
 
     def inverse_transform_polar(
-        self, theta: NDArray, roll: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         raise NotImplementedError(
             "PolynomialScaler does not support inverse transform."
         )
 
 
 @attrs.define()
-class ZoomTransformer(TransformerBase):
+class ZoomRemapper(RemapperBase):
     """Zoom the image."""
 
     scale: float
     """The zoom scale."""
 
-    def transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         x = x / self.scale
         y = y / self.scale
         return x, y
 
-    def inverse_transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+    def inverse_remap(
+        self, x: Array, y: Array, /, **kwargs: Any
+    ) -> tuple[Array, Array]:
         x = x * self.scale
         y = y * self.scale
         return x, y
 
 
-def equidistant_to_3d(x: NDArray, y: NDArray) -> NDArray:
+def equidistant_to_3d(x: Array, y: Array) -> Array:
     """
     Convert 2D coordinates to 3D unit vector.
 
@@ -488,14 +352,14 @@ def equidistant_to_3d(x: NDArray, y: NDArray) -> NDArray:
 
     Parameters
     ----------
-    x : NDArray
+    x : Array
         The x coordinate in equidistant fisheye format.
-    y : NDArray
+    y : Array
         The y coordinate in equidistant fisheye format.
 
     Returns
     -------
-    NDArray
+    Array
         The 3D unit vector.
 
     """
@@ -508,18 +372,18 @@ def equidistant_to_3d(x: NDArray, y: NDArray) -> NDArray:
     return v
 
 
-def equidistant_from_3d(v: NDArray) -> tuple[NDArray, NDArray]:
+def equidistant_from_3d(v: Array) -> tuple[Array, Array]:
     """
     Convert 3D unit vector to 2D coordinates.
 
     Parameters
     ----------
-    v : NDArray
+    v : Array
         The 3D unit vector.
 
     Returns
     -------
-    tuple[NDArray, NDArray]
+    tuple[Array, Array]
         The x and y coordinates in equidistant fisheye format.
 
     """
@@ -531,15 +395,13 @@ def equidistant_from_3d(v: NDArray) -> tuple[NDArray, NDArray]:
 
 
 @attrs.define()
-class EquirectangularEncoder(TransformerBase):
+class EquirectangularEncoder(RemapperBase):
     """Encodes equirectangular image."""
 
     is_latitude_y: bool = True
     """Whether latitude is encoded in y axis."""
 
-    def transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         # latitude: 日本語で緯度, phi
         # longitude: 日本語で経度, theta
         if self.is_latitude_y:
@@ -567,9 +429,9 @@ class EquirectangularEncoder(TransformerBase):
 
         return equidistant_from_3d(v)
 
-    def inverse_transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+    def inverse_remap(
+        self, x: Array, y: Array, /, **kwargs: Any
+    ) -> tuple[Array, Array]:
         v = equidistant_to_3d(x, y)
         if self.is_latitude_y:
             theta_lat = np.arcsin(v[..., 1])
@@ -586,7 +448,7 @@ class EquirectangularEncoder(TransformerBase):
 
 def EquirectangularDecoder(
     is_latitude_y: bool = True,
-) -> InverseTransformer[EquirectangularEncoder]:
+) -> InverseRemapper[EquirectangularEncoder]:
     """
     Decodes equirectangular image.
 
@@ -597,31 +459,31 @@ def EquirectangularDecoder(
 
     Returns
     -------
-    InverseTransformer[EquirectangularEncoder]
+    InverseRemapper[EquirectangularEncoder]
         The equirectangular decoder.
 
     """
-    return InverseTransformer(EquirectangularEncoder(is_latitude_y))
+    return InverseRemapper(EquirectangularEncoder(is_latitude_y))
 
 
 @attrs.define()
-class Euclidean3DTransformer(TransformerBase):
+class Euclidean3DRemapper(RemapperBase):
     """Transform as 3D unit vector."""
 
     @abstractmethod
-    def transform_v(self, v: NDArray) -> NDArray:
+    def transform_v(self, v: Array) -> Array:
         """
         Transform 3D unit vector.
 
         Parameters
         ----------
-        v : NDArray
+        v : Array
             The 3D unit vector.
             z axis is forward, x axis is right, y axis is up.
 
         Returns
         -------
-        NDArray
+        Array
             The transformed 3D unit vector.
             z axis is forward, x axis is right, y axis is up.
 
@@ -629,36 +491,34 @@ class Euclidean3DTransformer(TransformerBase):
         pass
 
     @abstractmethod
-    def inverse_transform_v(self, v: NDArray) -> NDArray:
+    def inverse_transform_v(self, v: Array) -> Array:
         """
         Inverse transform 3D unit vector.
 
         Parameters
         ----------
-        v : NDArray
+        v : Array
             The 3D unit vector.
             z axis is forward, x axis is right, y axis is up.
 
         Returns
         -------
-        NDArray
+        Array
             The inverse transformed 3D unit vector.
             z axis is forward, x axis is right, y axis is up.
 
         """
         pass
 
-    def transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         v = equidistant_to_3d(x, y)
         v = self.transform_v(v)
         x, y = equidistant_from_3d(v)
         return x, y
 
-    def inverse_transform(
-        self, x: NDArray, y: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+    def inverse_remap(
+        self, x: Array, y: Array, /, **kwargs: Any
+    ) -> tuple[Array, Array]:
         v = equidistant_to_3d(x, y)
         v = self.transform_v(v)
         x, y = equidistant_from_3d(v)
@@ -666,14 +526,14 @@ class Euclidean3DTransformer(TransformerBase):
 
 
 @attrs.define()
-class Euclidean3DRotator(Euclidean3DTransformer):
+class Euclidean3DRotator(Euclidean3DRemapper):
     """Rotate as 3D unit vector."""
 
     rotation: quaternion
     """The rotation quaternion."""
 
-    def transform_v(self, v: NDArray) -> NDArray:
+    def transform_v(self, v: Array) -> Array:
         return rotate_vectors(self.rotation, v)
 
-    def inverse_transform_v(self, v: NDArray) -> NDArray:
+    def inverse_transform_v(self, v: Array) -> Array:
         return rotate_vectors(self.rotation.inverse(), v)
