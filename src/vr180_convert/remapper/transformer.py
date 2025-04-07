@@ -10,7 +10,7 @@ import numpy as np
 from ivy import Array, NativeArray
 
 from ..base import TransformerBase
-from .remapper import RemapperBase
+from .base import RemapperBase
 
 
 def _remap(

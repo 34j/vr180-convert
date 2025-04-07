@@ -10,10 +10,38 @@ from ivy import Array
 class TransformerBase(metaclass=ABCMeta):
     @abstractmethod
     def transform(self, x: Array, /, **kwargs: Any) -> Array:
+        """
+        Transform the input data.
+
+        Parameters
+        ----------
+        x : Array
+            Image of shape (..., lr, width, height, channels).
+
+        Returns
+        -------
+        Array
+            Transformed image of shape (..., lr, width, height, channels).
+
+        """
         pass
 
     @abstractmethod
     def inverse_transform(self, x: Array, /, **kwargs: Any) -> Array:
+        """
+        Inverse transform the input data.
+
+        Parameters
+        ----------
+        x : Array
+            Image of shape (..., lr, width, height, channels).
+
+        Returns
+        -------
+        Array
+            Transformed image of shape (..., lr, width, height, channels).
+
+        """
         pass
 
     def __mul__(self, other: TransformerBase) -> TransformerBase:
