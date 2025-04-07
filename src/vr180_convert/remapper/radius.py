@@ -4,7 +4,8 @@ import attrs
 import ivy
 from ivy import Array
 
-from .remapper import DenormalizeRemapper, RemapperBase
+from .denormalize import DenormalizeRemapper
+from .remapper import RemapperBase
 
 
 def _get_radius(input: Array, *, threshold: int = 10) -> float:

@@ -7,13 +7,12 @@ import numpy as np
 import pytest
 from ivy import Array
 
-from vr180_convert.remapper.radius import AutoDenormalizeRemapper
-from vr180_convert.remapper.remapper import (
+from vr180_convert.remapper.equidistant import (
     EquirectangularEncoder,
-    FisheyeDecoder,
-    FisheyeEncoder,
-    NormalizeRemapper,
 )
+from vr180_convert.remapper.fisheye import FisheyeDecoder, FisheyeEncoder
+from vr180_convert.remapper.normalize import NormalizeRemapper
+from vr180_convert.remapper.radius import AutoDenormalizeRemapper
 from vr180_convert.remapper.transformer import RemapperTransformer
 from vr180_convert.testing import generate_test_image
 
