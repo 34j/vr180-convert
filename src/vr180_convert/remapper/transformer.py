@@ -4,9 +4,10 @@ from abc import ABCMeta
 from typing import Any
 
 import attrs
-import cv2 as cv
 import ivy
 import numpy as np
+import torch
+import torch.nn.functional as F
 from ivy import Array, NativeArray
 
 from ..base import TransformerBase
@@ -18,16 +19,36 @@ def _remap(
     x: Array | NativeArray,
     y: Array | NativeArray,
     /,
-    *args: Any,
     **kwargs: Any,
-) -> cv.Mat:
-    return cv.remap(
-        ivy.to_numpy(image).astype(np.float32),
-        ivy.to_numpy(x).astype(np.float32),
-        ivy.to_numpy(y).astype(np.float32),
-        *args,
+) -> Any:
+    """
+    Remap the image using the given x and y coordinates.
+
+    Parameters
+    ----------
+    image : Array | NativeArray
+        The image to be remapped of shape (..., width, height, channels).
+    x : Array | NativeArray
+        The x coordinates of shape (..., width, height).
+    y : Array | NativeArray
+        The y coordinates of shape (..., width, height).
+    **kwargs : Any
+        Additional keyword arguments to be passed to the remap function.
+
+    """
+    shape = image.shape
+    image = image.reshape((-1, *shape[-3:]))
+    image = ivy.moveaxis(image, -1, 1)
+    x = x.reshape((-1, *shape[-3:-1]))
+    y = y.reshape((-1, *shape[-3:-1]))
+    x = 2 * x / (x.shape[-2] - 1) - 1
+    y = 2 * y / (y.shape[-1] - 1) - 1
+    result = F.grid_sample(
+        torch.tensor(image).float(),
+        torch.tensor(ivy.stack([x, y], axis=-1)).float(),
         **kwargs,
-    )
+    ).moveaxis(1, -1)
+    return ivy.asarray(result.reshape((*shape[:-3], *result.shape[-3:])))
 
 
 @attrs.define(kw_only=True)
@@ -47,7 +68,6 @@ class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
                     x,
                     xmap,
                     ymap,
-                    cv.INTER_LINEAR,
                 )
                 xmap, ymap = remapper.remap(xmap, ymap, image=image, **kwargs)
             else:
@@ -56,7 +76,6 @@ class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
             x,
             xmap,
             ymap,
-            cv.INTER_LINEAR,
         )
 
     def inverse_transform(self, x: Array, /, **kwargs: Any) -> Array:
