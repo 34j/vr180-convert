@@ -88,7 +88,7 @@ class AutoDenormalizeRemapper(RemapperBase):
         radius = _get_radius_smart(self.strategy, image)
         self.radius = radius
         self.child = DenormalizeRemapper(
-            scale=(radius, radius), center=(image.shape[-3] // 2, image.shape[-2] // 2)
+            scale=(radius, radius), center=(image.shape[-2] // 2, image.shape[-3] // 2)
         )
 
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
