@@ -120,10 +120,10 @@ class RotationMatchRemapper(RemapperBase):
         if images is None:
             raise ValueError("images must be provided.")
         shape = images.shape
-        images = ivy.reshape((-1, *shape[-3:]), images)
+        images = ivy.reshape((-1, *shape[-4:]), images)
         qs = []
         for images_lr in images:
-            match = feature_match_points(images_lr[0, :, :], images_lr[1, :, :])
+            match = feature_match_points(images_lr[0, :, :, :], images_lr[1, :, :, :])
             self.match = match
             q = rotation_match_robust(
                 points_to_be_rotated=match.points1,
@@ -131,11 +131,14 @@ class RotationMatchRemapper(RemapperBase):
                 **(self.rotation_match_kwargs or {}),
             )
             qs.append(q)
-        qs = np.asarray(qs).reshape(shape[:-3] + (4,))
+        qs = np.asarray(qs).reshape(shape[:-4] + (4,))
         self.child = Euclidean3DRotator(
             rotation=qs,
         )
-        return self.child.remap(x, y, **kwargs)
+        xl, yl = x[..., 0, :, :, :], y[..., 0, :, :, :]
+        xr, yr = x[..., 1, :, :, :], y[..., 1, :, :, :]
+        xr, yr = self.child.remap(xr, yr, **kwargs)
+        return ivy.stack([xl, xr], axis=-3), ivy.stack([yl, yr], axis=-3)
 
     def inverse_remap(
         self, x: Array, y: Array, /, **kwargs: Any
