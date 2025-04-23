@@ -23,9 +23,9 @@ class NormalizeRemapper(RemapperBase):
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         center = self.center or (x.shape[-1] / 2, x.shape[-2] / 2)
         scale = (
-            min(x.shape[-1], x.shape[-2])
+            min(x.shape[-2:])
             if self.scale in ["min", None]
-            else max(x.shape[-1], x.shape[-2]) if self.scale == "max" else self.scale
+            else max(x.shape[-2:]) if self.scale == "max" else self.scale
         )
         self.center_ = center
         self.scale_ = scale
@@ -38,9 +38,9 @@ class NormalizeRemapper(RemapperBase):
     ) -> tuple[Array, Array]:
         center = self.center or (x.shape[-1] / 2, x.shape[-2] / 2)
         scale = (
-            min(x.shape[-1], x.shape[-2])
+            min(x.shape[-2:])
             if self.scale in ["min", None]
-            else max(x.shape[-1], x.shape[-2]) if self.scale == "max" else self.scale
+            else max(x.shape[-2:]) if self.scale == "max" else self.scale
         )
         self.center_ = center
         self.scale_ = scale
