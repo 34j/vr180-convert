@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import Any
 
 import attrs
-import numpy as np
+import ivy
 from ivy import Array
 
 from vr180_convert.remapper.polar_roll import PolarRollRemapper
@@ -19,7 +19,7 @@ class PolynomialScaler(PolarRollRemapper):
     def transform_polar(
         self, theta: Array, roll: Array, **kwargs: Any
     ) -> tuple[Array, Array]:
-        return np.polyval(np.flip(self.coefs_reverse), theta), roll
+        return ivy.polyval(ivy.flip(self.coefs_reverse), theta), roll
 
     def inverse_transform_polar(
         self, theta: Array, roll: Array, **kwargs: Any
