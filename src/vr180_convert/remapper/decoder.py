@@ -66,4 +66,4 @@ class RectilinearDecoder(PolarRollRemapper):
         self, theta: Array, roll: Array, **kwargs: Any
     ) -> tuple[Array, Array]:
         # fov = 2 arctan sensor_width / (2 * focal_length)
-        return ivy.arctan(theta / self.factor), roll
+        return ivy.atan(theta / self.factor), roll
