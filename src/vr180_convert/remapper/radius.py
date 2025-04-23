@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from typing import Any, Literal
 
 import attrs
@@ -46,7 +45,7 @@ def _get_radius(input: Array, *, threshold: int = 10) -> float:
 
 def _get_radius_smart(
     radius: float | Literal["auto", "max"],
-    images: Sequence[Array],
+    images: Array,
 ) -> float:
     """
     Get radius smartly.
@@ -55,7 +54,7 @@ def _get_radius_smart(
     ----------
     radius : float | Literal[&quot;auto&quot;, &quot;max&quot;]
         The strategy to get the radius.
-    images : Sequence[Array]
+    images : Array
         Images to be processed.
 
     Returns
@@ -65,10 +64,12 @@ def _get_radius_smart(
 
     """
     if radius == "auto":
-        radius_candidates = [_get_radius(image) for image in images]
+        radius_candidates = [
+            _get_radius(image) for image in images.reshape((-1, *images.shape[-3:]))
+        ]
         radius_ = max(radius_candidates)
     elif radius == "max":
-        radius_ = min(images[0].shape[0] / 2, images[0].shape[1] / 2)
+        radius_ = min(images.shape[-3:-1]) / 2
     else:
         radius_ = radius
     return radius_
@@ -79,14 +80,16 @@ class AutoDenormalizeRemapper(RemapperBase):
     strategy: Literal["auto", "max"] | float
     child: DenormalizeRemapper | None = None
     requires_image: bool = True
+    radius: float | None = None
 
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         image = kwargs.pop("image")
         if image is None:
             raise ValueError("Image must be provided.")
-        radius = _get_radius_smart(self.strategy, [image])
+        radius = _get_radius_smart(self.strategy, image)
+        self.radius = radius
         self.child = DenormalizeRemapper(
-            scale=(radius, radius), center=(image.shape[0] // 2, image.shape[1] // 2)
+            scale=(radius, radius), center=(image.shape[-3] // 2, image.shape[-2] // 2)
         )
         return self.child.remap(x, y, **kwargs)
 
