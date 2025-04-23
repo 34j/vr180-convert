@@ -10,7 +10,7 @@ from quaternion import as_quat_array, quaternion, rotate_vectors
 from vr180_convert.remapper.base import RemapperBase
 
 from .euclidean import Euclidean3DRotator
-from .feature_match import feature_match_points
+from .feature_match import MatchResult, feature_match_points
 
 
 def rotation_match(
@@ -51,16 +51,16 @@ def rotation_match(
     b = np.concatenate([points, np.zeros_like(points[..., :1])], axis=1)
     bx, by, bz, bw = b[..., 0], b[..., 1], b[..., 2], b[..., 3]
 
-    right_mult_matrix = np.array(
+    right_mult_matrix = np.asarray(
         [[aw, -az, ay, -ax], [az, aw, -ax, -ay], [-ay, ax, aw, -az], [ax, ay, az, aw]]
     )
-    left_mult_matrix = np.array(
+    left_mult_matrix = np.asarray(
         [[bw, bz, -by, -bx], [-bz, bw, bx, -by], [by, -bx, bw, -bz], [bx, by, bz, bw]]
     )
     S = right_mult_matrix - left_mult_matrix
-    B = np.einsum("jik,jlk->il", S, S)
+    B = np.einsum("...jik,...jlk->...il", S, S)
     eigenvalues, eigenvectors = np.linalg.eig(B)
-    q = eigenvectors[:, np.argmin(eigenvalues)]
+    q = eigenvectors[..., :, np.argmin(eigenvalues)]
     return as_quat_array([q[..., 3], q[..., 0], q[..., 1], q[..., 2]])
 
 
@@ -113,6 +113,7 @@ class RotationMatchRemapper(RemapperBase):
     requires_image: bool = True
     rotation_match_kwargs: dict[str, Any] | None = None
     child: Euclidean3DRotator | None = None
+    match: MatchResult | None = None
 
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         images = kwargs.pop("images")
@@ -123,6 +124,7 @@ class RotationMatchRemapper(RemapperBase):
         qs = []
         for images_lr in images:
             match = feature_match_points(images_lr[0, :, :], images_lr[1, :, :])
+            self.match = match
             q = rotation_match_robust(
                 points_to_be_rotated=match.points1,
                 points=match.points2,
