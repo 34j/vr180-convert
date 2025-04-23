@@ -5,7 +5,6 @@ from typing import Any
 
 import attrs
 import ivy
-import numpy as np
 import torch
 import torch.nn.functional as F
 from ivy import Array, NativeArray
@@ -55,28 +54,21 @@ def _remap(
 class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
     remappers: list[RemapperBase]
     size_output: tuple[int, int]
+    remap_kwargs: dict[str, Any] | None = None
 
     """Base class for transformers."""
 
     def transform(self, x: Array, /, **kwargs: Any) -> Array:
-        xmap, ymap = np.meshgrid(
-            np.arange(self.size_output[0]), np.arange(self.size_output[1])
+        xmap, ymap = ivy.meshgrid(
+            ivy.arange(self.size_output[0]), ivy.arange(self.size_output[1])
         )
         for remapper in [*self.remappers]:
             if remapper.requires_image:
-                image = _remap(
-                    x,
-                    xmap,
-                    ymap,
-                )
+                image = _remap(x, xmap, ymap, **(self.remap_kwargs or {}))
                 xmap, ymap = remapper.remap(xmap, ymap, image=image, **kwargs)
             else:
                 xmap, ymap = remapper.remap(xmap, ymap, **kwargs)
-        return _remap(
-            x,
-            xmap,
-            ymap,
-        )
+        return _remap(x, xmap, ymap, **(self.remap_kwargs or {}))
 
     def inverse_transform(self, x: Array, /, **kwargs: Any) -> Array:
         raise NotImplementedError()
