@@ -15,6 +15,10 @@ class NormalizeRemapper(RemapperBase):
     scale: tuple[float, float] | Literal["min", "max"] | None = None
     """The scale of the image. If "min" or None, the scale is the minimum of the width and height.
     If "max", the scale is the maximum of the width and height."""
+    center_: tuple[float, float] | None = attrs.field(init=False, default=None)
+    """The center of the image after fitting."""
+    scale_: tuple[float, float] | None = attrs.field(init=False, default=None)
+    """The scale of the image after fitting."""
 
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         center = self.center or (x.shape[-1] / 2, x.shape[-2] / 2)
@@ -23,6 +27,8 @@ class NormalizeRemapper(RemapperBase):
             if self.scale in ["min", None]
             else max(x.shape[-1], x.shape[-2]) if self.scale == "max" else self.scale
         )
+        self.center_ = center
+        self.scale_ = scale
         x = (x - center[0]) / scale * 2
         y = (y - center[1]) / scale * 2
         return x, y
@@ -36,6 +42,8 @@ class NormalizeRemapper(RemapperBase):
             if self.scale in ["min", None]
             else max(x.shape[-1], x.shape[-2]) if self.scale == "max" else self.scale
         )
+        self.center_ = center
+        self.scale_ = scale
         x = x * scale[0] + center[0]
         y = y * scale[1] + center[1]
         return x, y
