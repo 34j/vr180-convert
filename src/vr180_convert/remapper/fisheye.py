@@ -1,7 +1,7 @@
 from typing import Any, Literal
 
 import attrs
-import numpy as np
+import ivy
 from ivy import Array
 
 from vr180_convert.remapper.inverse import InverseRemapper
@@ -22,15 +22,15 @@ class FisheyeEncoder(PolarRollRemapper):
     ) -> tuple[Array, Array]:
         """[-1, 1] -> [-pi/2, pi/2]."""
         if self.mapping_type == "rectilinear":
-            return np.arctan(theta), roll
+            return ivy.atan(theta), roll
         elif self.mapping_type == "stereographic":
-            return 2 * np.arctan(theta), roll
+            return 2 * ivy.atan(theta), roll
         elif self.mapping_type == "equidistant":
-            return theta * (np.pi / 2), roll
+            return theta * (ivy.pi / 2), roll
         elif self.mapping_type == "equisolid":
-            return 2 * np.arcsin(theta / np.sqrt(2)), roll
+            return 2 * ivy.asin(theta / ivy.sqrt(2)), roll
         elif self.mapping_type == "orthographic":
-            return np.arcsin(theta), roll
+            return ivy.asin(theta), roll
         else:
             raise ValueError(
                 f"Unknown mapping type: {self.mapping_type}, "
@@ -42,15 +42,15 @@ class FisheyeEncoder(PolarRollRemapper):
     ) -> tuple[Array, Array]:
         """[-pi/2, pi/2] -> [-1, 1]."""
         if self.mapping_type == "rectilinear":
-            return np.tan(theta), roll
+            return ivy.tan(theta), roll
         elif self.mapping_type == "stereographic":
-            return 2 * np.tan(theta / 2), roll
+            return 2 * ivy.tan(theta / 2), roll
         elif self.mapping_type == "equidistant":
-            return theta / (np.pi / 2), roll
+            return theta / (ivy.pi / 2), roll
         elif self.mapping_type == "equisolid":
-            return np.sqrt(2) * np.sin(theta / 2), roll
+            return ivy.sqrt(2) * ivy.sin(theta / 2), roll
         elif self.mapping_type == "orthographic":
-            return np.sin(theta), roll
+            return ivy.sin(theta), roll
         else:
             raise ValueError(
                 f"Unknown mapping type: {self.mapping_type}, "
