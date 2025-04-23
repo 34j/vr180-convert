@@ -2,6 +2,7 @@ from collections.abc import Sequence
 
 import attrs
 import cv2 as cv
+import ivy
 import numpy as np
 from ivy import Array
 
@@ -77,8 +78,8 @@ def feature_match_points(
         points2.append(kp2[m.trainIdx].pt)
 
     # Scale the points back to the original image size
-    points1_ = np.asarray(points1)
-    points2_ = np.asarray(points2)
+    points1_ = ivy.asarray(points1)
+    points2_ = ivy.asarray(points2)
     if scale is not None:
         points1_ /= scale
         points2_ /= scale
