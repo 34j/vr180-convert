@@ -138,3 +138,4 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+ivy_logs.txt

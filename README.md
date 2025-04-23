@@ -201,20 +201,20 @@ v1c --help
 
 ## Usage as a library
 
-For more complex transformations, it is recommended to create your own `Transformer`.
+For more complex transformations, it is recommended to create your own `Remapper`.
 
 Note that the transformation is applied in inverse order (new[(x, y)] = old[transform(x, y)], e.g. to decode [orthographic](https://en.wikipedia.org/wiki/Fisheye_lens#Mapping_function) fisheye images, `transform_polar` should be `arcsin(theta)`, not `sin(theta)`.)
 
 ```python
-from vr180_convert import PolarRollTransformer, apply_lr
+from vr180_convert import PolarRollRemapper, apply_lr
 
-class MyTransformer(PolarRollTransformer):
+class MyRemapper(PolarRollRemapper):
     def transform_polar(
-        self, theta: NDArray, roll: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         return theta**0.98 + theta**1.01, roll
 
-transformer = EquirectangularEncoder() * MyTransformer() * FisheyeDecoder("equidistant")
+transformer = EquirectangularEncoder() * MyRemapper() * FisheyeDecoder("equidistant")
 apply_lr(transformer, left_path="left.jpg", right_path="right.jpg", out_path="output.jpg")
 ```
 

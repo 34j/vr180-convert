@@ -1,0 +1,121 @@
+from __future__ import annotations
+
+from abc import abstractmethod
+from collections.abc import Callable
+from typing import Any
+
+import attrs
+from ivy import Array
+
+
+class UnfitError(RuntimeError):
+    """Exception raised when the transformer is not fitted."""
+
+    def __init__(self, caller: object) -> None:
+        """
+        Initialize the UnfitError.
+
+        Parameters
+        ----------
+        caller : object
+            The object that called the method.
+
+        """
+        super().__init__(f"{caller.__class__.__name__} is not fitted yet.")
+        self.caller = caller
+
+
+@attrs.define(kw_only=True)
+class RemapperBase:
+    requires_image: bool = attrs.field(default=False, init=False)
+
+    def fit(
+        self, image: Array, inv: Callable[[Array, Array], tuple[Array, Array]], /
+    ) -> None:
+        """
+        Fit the transformer to the images.
+
+        Parameters
+        ----------
+        images : Array
+            Images to be transformed of shape (..., lr, height, width, channels).
+        inv : Callable[[Array, Array], tuple[Array, Array]]
+            Inverse function to be used for fitting.
+
+        """
+        pass
+
+    @abstractmethod
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
+        """
+        Transform the input coordinates.
+
+        Parameters
+        ----------
+        x : Array
+            x (left-right) coordinates of shape (..., lr, height, width).
+        y : Array
+            y (up-down) coordinates of shape (..., lr, height, width).
+        images: Array
+            Images to be transformed of shape (..., lr, height, width, channels).
+        **kwargs : Any
+            Any additional keyword arguments.
+
+        Returns
+        -------
+        tuple[Array, Array]
+            x and y coordinates after transformation.
+
+        """
+
+    @abstractmethod
+    def inverse_remap(
+        self, x: Array, y: Array, /, **kwargs: Any
+    ) -> tuple[Array, Array]:
+        """
+        Inverse transform the input coordinates.
+
+        Parameters
+        ----------
+        x : Array
+            x (left-right) coordinates of shape (..., lr, height, width).
+        y : Array
+            y (up-down) coordinates of shape (..., lr, height, width).
+        **kwargs : Any
+            Any additional keyword arguments.
+
+        Returns
+        -------
+        tuple[Array, Array]
+            x and y coordinates after transformation.
+
+        """
+
+    def __mul__(self, other: RemapperBase, /) -> MultiRemapper:
+        """Multiply two transformers together."""
+        if isinstance(self, MultiRemapper) and isinstance(other, MultiRemapper):
+            return MultiRemapper(transformers=[*self.transformers, *other.transformers])
+        elif isinstance(self, MultiRemapper):
+            return MultiRemapper(transformers=[*self.transformers, other])
+        elif isinstance(other, MultiRemapper):
+            return MultiRemapper(transformers=[self, *other.transformers])
+        return MultiRemapper(transformers=[self, other])
+
+
+@attrs.define(kw_only=True)
+class MultiRemapper(RemapperBase):
+    """A transformer that applies multiple transformers in sequence."""
+
+    transformers: list[RemapperBase]
+
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
+        for transformer in self.transformers:
+            x, y = transformer.remap(x, y, **kwargs)
+        return x, y
+
+    def inverse_remap(
+        self, x: Array, y: Array, /, **kwargs: Any
+    ) -> tuple[Array, Array]:
+        for transformer in reversed(self.transformers):
+            x, y = transformer.inverse_remap(x, y, **kwargs)
+        return x, y
