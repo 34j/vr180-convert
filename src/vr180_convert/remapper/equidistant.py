@@ -27,7 +27,7 @@ def equidistant_to_3d(x: Array, y: Array) -> Array:
         The 3D unit vector.
 
     """
-    phi = ivy.arctan2(x, y)
+    phi = ivy.atan2(x, y)
     theta = ivy.sqrt(x**2 + y**2)
     v = ivy.stack(
         [ivy.sin(theta) * ivy.sin(phi), ivy.sin(theta) * ivy.cos(phi), ivy.cos(theta)],
@@ -51,8 +51,8 @@ def equidistant_from_3d(v: Array) -> tuple[Array, Array]:
         The x and y coordinates in equidistant fisheye format.
 
     """
-    theta = ivy.arccos(v[..., 2])
-    phi = ivy.arctan2(v[..., 0], v[..., 1])
+    theta = ivy.acos(v[..., 2])
+    phi = ivy.atan2(v[..., 0], v[..., 1])
     x = theta * ivy.sin(phi)
     y = theta * ivy.cos(phi)
     return x, y
@@ -98,13 +98,13 @@ class EquirectangularEncoder(RemapperBase):
     ) -> tuple[Array, Array]:
         v = equidistant_to_3d(x, y)
         if self.is_latitude_y:
-            theta_lat = ivy.arcsin(v[..., 1])
-            phi_lon = ivy.arctan2(v[..., 0], v[..., 2])
+            theta_lat = ivy.asin(v[..., 1])
+            phi_lon = ivy.atan2(v[..., 0], v[..., 2])
             x = phi_lon / (ivy.pi / 2)
             y = theta_lat / (ivy.pi / 2)
         else:
-            theta_lat = ivy.arcsin(v[..., 0])
-            phi_lon = ivy.arctan2(v[..., 1], v[..., 2])
+            theta_lat = ivy.asin(v[..., 0])
+            phi_lon = ivy.atan2(v[..., 1], v[..., 2])
             x = theta_lat / (ivy.pi / 2)
             y = phi_lon / (ivy.pi / 2)
         return x, y
