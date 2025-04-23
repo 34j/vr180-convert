@@ -1,14 +1,15 @@
+from collections.abc import Callable
 from typing import Any, Literal
 
 import attrs
 import ivy
 from ivy import Array
 
-from .base import RemapperBase
+from .base import RemapperBase, UnfitError
 from .denormalize import DenormalizeRemapper
 
 
-def _get_radius(input: Array, *, threshold: int = 10) -> float:
+def _get_radius(input: Array, *, threshold: int = 10) -> Array:
     """
     Estimate the radius of the circle in the image.
 
@@ -25,11 +26,11 @@ def _get_radius(input: Array, *, threshold: int = 10) -> float:
         The estimated radius.
 
     """
-    height, width = input.shape[:2]
+    height, width = input.shape[-3:-1]
     if width > height:
-        center_row = input[height // 2, :, :]
+        center_row = input[..., height // 2, :, :]
     else:
-        center_row = input[:, width // 2, :]
+        center_row = input[..., :, width // 2, :]
     del height, width
 
     # determine if a pixel is black
@@ -37,8 +38,10 @@ def _get_radius(input: Array, *, threshold: int = 10) -> float:
     center_row_is_black_deriv = ivy.diff(center_row_is_black.astype(int))
 
     # first and last 1 in the derivative
-    center_row_black_start = ivy.argmax(center_row_is_black_deriv == 1)
-    center_row_black_end = ivy.argmax(ivy.flip(center_row_is_black_deriv == -1))
+    center_row_black_start = ivy.argmax(center_row_is_black_deriv == 1, axis=-1)
+    center_row_black_end = center_row_is_black_deriv.shape[-1] - ivy.argmax(
+        ivy.flip(center_row_is_black_deriv == -1, axis=-1), axis=-1
+    )
     radius = (center_row_black_end - center_row_black_start) / 2
     return radius
 
@@ -64,10 +67,7 @@ def _get_radius_smart(
 
     """
     if radius == "auto":
-        radius_candidates = [
-            _get_radius(image) for image in images.reshape((-1, *images.shape[-3:]))
-        ]
-        radius_ = max(radius_candidates)
+        radius_ = _get_radius(images).max()
     elif radius == "max":
         radius_ = min(images.shape[-3:-1]) / 2
     else:
@@ -82,20 +82,23 @@ class AutoDenormalizeRemapper(RemapperBase):
     requires_image: bool = True
     radius: float | None = None
 
-    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
-        image = kwargs.pop("image")
-        if image is None:
-            raise ValueError("Image must be provided.")
+    def fit(
+        self, image: Array, inv: Callable[[Array, Array], tuple[Array, Array]]
+    ) -> None:
         radius = _get_radius_smart(self.strategy, image)
         self.radius = radius
         self.child = DenormalizeRemapper(
             scale=(radius, radius), center=(image.shape[-3] // 2, image.shape[-2] // 2)
         )
+
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
+        if self.child is None:
+            raise UnfitError(self)
         return self.child.remap(x, y, **kwargs)
 
     def inverse_remap(
         self, x: Array, y: Array, /, **kwargs: Any
     ) -> tuple[Array, Array]:
         if self.child is None:
-            raise ValueError("Remapper has not been called yet.")
+            raise UnfitError(self)
         return self.child.inverse_remap(x, y, **kwargs)

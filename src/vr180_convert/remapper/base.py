@@ -1,15 +1,49 @@
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
+from collections.abc import Callable
 from typing import Any
 
 import attrs
 from ivy import Array
 
 
+class UnfitError(RuntimeError):
+    """Exception raised when the transformer is not fitted."""
+
+    def __init__(self, caller: object) -> None:
+        """
+        Initialize the UnfitError.
+
+        Parameters
+        ----------
+        caller : object
+            The object that called the method.
+
+        """
+        super().__init__(f"{caller.__class__.__name__} is not fitted yet.")
+        self.caller = caller
+
+
 @attrs.define(kw_only=True)
-class RemapperBase(metaclass=ABCMeta):
-    requires_image: bool = False
+class RemapperBase:
+    requires_image: bool = attrs.field(default=False, init=False)
+
+    def fit(
+        self, image: Array, inv: Callable[[Array, Array], tuple[Array, Array]], /
+    ) -> None:
+        """
+        Fit the transformer to the images.
+
+        Parameters
+        ----------
+        images : Array
+            Images to be transformed of shape (..., lr, height, width, channels).
+        inv : Callable[[Array, Array], tuple[Array, Array]]
+            Inverse function to be used for fitting.
+
+        """
+        pass
 
     @abstractmethod
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:

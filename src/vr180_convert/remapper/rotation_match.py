@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 import ivy
@@ -7,7 +8,7 @@ import numpy as np
 from ivy import Array
 from quaternion import as_quat_array, quaternion, rotate_vectors
 
-from vr180_convert.remapper.base import RemapperBase
+from vr180_convert.remapper.base import RemapperBase, UnfitError
 
 from .euclidean import Euclidean3DRotator
 from .feature_match import MatchResult, feature_match_points
@@ -112,17 +113,17 @@ def rotation_match_robust(
 class RotationMatchRemapper(RemapperBase):
     requires_image: bool = True
     rotation_match_kwargs: dict[str, Any] | None = None
-    child: Euclidean3DRotator | None = None
+    childl: Euclidean3DRotator | None = None
+    childr: Euclidean3DRotator | None = None
     match: MatchResult | None = None
 
-    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
-        images = kwargs.pop("images")
-        if images is None:
-            raise ValueError("images must be provided.")
-        shape = images.shape
-        images = ivy.reshape((-1, *shape[-4:]), images)
+    def fit(
+        self, image: Array, inv: Callable[[Array, Array], tuple[Array, Array]]
+    ) -> None:
+        shape = image.shape
+        image = ivy.reshape((-1, *shape[-4:]), image)
         qs = []
-        for images_lr in images:
+        for images_lr in image:
             match = feature_match_points(images_lr[0, :, :, :], images_lr[1, :, :, :])
             self.match = match
             q = rotation_match_robust(
@@ -132,17 +133,29 @@ class RotationMatchRemapper(RemapperBase):
             )
             qs.append(q)
         qs = np.asarray(qs).reshape(shape[:-4] + (4,))
-        self.child = Euclidean3DRotator(
+        self.childl = Euclidean3DRotator(
             rotation=qs,
         )
+        self.childr = Euclidean3DRotator(
+            rotation=qs,
+        )
+
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
+        if self.childl is None or self.childr is None:
+            raise UnfitError(self)
         xl, yl = x[..., 0, :, :, :], y[..., 0, :, :, :]
         xr, yr = x[..., 1, :, :, :], y[..., 1, :, :, :]
-        xr, yr = self.child.remap(xr, yr, **kwargs)
+        xr, yr = self.childl.remap(xr, yr, **kwargs)
+        xl, yl = self.childr.remap(xl, yl, **kwargs)
         return ivy.stack([xl, xr], axis=-3), ivy.stack([yl, yr], axis=-3)
 
     def inverse_remap(
         self, x: Array, y: Array, /, **kwargs: Any
     ) -> tuple[Array, Array]:
-        if self.child is None:
+        if self.childl is None or self.childr is None:
             raise ValueError("Remapper has not been called yet.")
-        return self.child.inverse_remap(x, y, **kwargs)
+        xl, yl = x[..., 0, :, :, :], y[..., 0, :, :, :]
+        xr, yr = x[..., 1, :, :, :], y[..., 1, :, :, :]
+        xr, yr = self.childl.inverse_remap(xr, yr, **kwargs)
+        xl, yl = self.childr.inverse_remap(xl, yl, **kwargs)
+        return ivy.stack([xl, xr], axis=-3), ivy.stack([yl, yr], axis=-3)

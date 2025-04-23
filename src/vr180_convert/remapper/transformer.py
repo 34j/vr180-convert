@@ -71,12 +71,21 @@ class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
         xmap, ymap = ivy.meshgrid(
             ivy.arange(self.size_output[0]), ivy.arange(self.size_output[1])
         )
-        for remapper in reversed(self.remappers):
+        for i in range(len(self.remappers)):
+            remapper = self.remappers[i]
             if remapper.requires_image:
-                image = _remap(x, xmap, ymap, **(self.remap_kwargs or {}))
-                xmap, ymap = remapper.remap(xmap, ymap, image=image, **kwargs)
-            else:
-                xmap, ymap = remapper.remap(xmap, ymap, **kwargs)
+
+                def inner(
+                    x: Array, y: Array, /, i: int = i, **kwargs_inner: Any
+                ) -> tuple[Array, Array]:
+                    for remapper_before in self.remappers[:i]:
+                        x, y = remapper_before.inverse_remap(x, y, **kwargs_inner)
+                    return x, y
+
+                remapper.fit(x, inner, **kwargs)
+
+        for remapper in reversed(self.remappers):
+            xmap, ymap = remapper.remap(xmap, ymap, **kwargs)
         return _remap(x, xmap, ymap, **(self.remap_kwargs or {}))
 
     def inverse_transform(self, x: Array, /, **kwargs: Any) -> Array:
