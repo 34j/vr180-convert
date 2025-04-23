@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Any
 
 import attrs
-import numpy as np
+import ivy
 from ivy import Array
 
 from vr180_convert.remapper.base import RemapperBase
@@ -61,19 +61,19 @@ class PolarRollRemapper(RemapperBase):
         pass
 
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
-        theta = np.sqrt(x**2 + y**2)
-        roll = np.arctan2(y, x)
+        theta = ivy.sqrt(x**2 + y**2)
+        roll = ivy.atan2(y, x)
         theta, roll = self.transform_polar(theta, roll, **kwargs)
-        x = theta * np.cos(roll)
-        y = theta * np.sin(roll)
+        x = theta * ivy.cos(roll)
+        y = theta * ivy.sin(roll)
         return x, y
 
     def inverse_remap(
         self, x: Array, y: Array, /, **kwargs: Any
     ) -> tuple[Array, Array]:
-        theta = np.sqrt(x**2 + y**2)
-        roll = np.arctan2(y, x)
+        theta = ivy.sqrt(x**2 + y**2)
+        roll = ivy.atan2(y, x)
         theta, roll = self.inverse_transform_polar(theta, roll, **kwargs)
-        x = theta * np.cos(roll)
-        y = theta * np.sin(roll)
+        x = theta * ivy.cos(roll)
+        y = theta * ivy.sin(roll)
         return x, y
