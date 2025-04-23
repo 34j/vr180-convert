@@ -17,12 +17,12 @@ class TransformerBase(metaclass=ABCMeta):
         Parameters
         ----------
         x : Array
-            Image of shape (..., lr, width, height, channels).
+            Image of shape (..., lr, height, width, channels).
 
         Returns
         -------
         Array
-            Transformed image of shape (..., lr, width, height, channels).
+            Transformed image of shape (..., lr, height, width, channels).
 
         """
         pass
@@ -35,12 +35,12 @@ class TransformerBase(metaclass=ABCMeta):
         Parameters
         ----------
         x : Array
-            Image of shape (..., lr, width, height, channels).
+            Image of shape (..., lr, height, width, channels).
 
         Returns
         -------
         Array
-            Transformed image of shape (..., lr, width, height, channels).
+            Transformed image of shape (..., lr, height, width, channels).
 
         """
         pass

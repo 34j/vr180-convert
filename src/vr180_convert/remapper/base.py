@@ -19,11 +19,11 @@ class RemapperBase(metaclass=ABCMeta):
         Parameters
         ----------
         x : Array
-            x (left-right) coordinates of shape (..., lr, width, height).
+            x (left-right) coordinates of shape (..., lr, height, width).
         y : Array
-            y (up-down) coordinates of shape (..., lr, width, height).
+            y (up-down) coordinates of shape (..., lr, height, width).
         images: Array
-            Images to be transformed of shape (..., lr, width, height, channels).
+            Images to be transformed of shape (..., lr, height, width, channels).
         **kwargs : Any
             Any additional keyword arguments.
 
@@ -44,9 +44,9 @@ class RemapperBase(metaclass=ABCMeta):
         Parameters
         ----------
         x : Array
-            x (left-right) coordinates of shape (..., lr, width, height).
+            x (left-right) coordinates of shape (..., lr, height, width).
         y : Array
-            y (up-down) coordinates of shape (..., lr, width, height).
+            y (up-down) coordinates of shape (..., lr, height, width).
         **kwargs : Any
             Any additional keyword arguments.
 

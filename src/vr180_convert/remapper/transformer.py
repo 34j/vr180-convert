@@ -27,11 +27,11 @@ def _remap(
     Parameters
     ----------
     image : Array | NativeArray
-        The image to be remapped of shape (..., width, height, channels).
+        The image to be remapped of shape (..., height, width, channels).
     x : Array | NativeArray
-        The x coordinates of shape (..., width, height).
+        The x coordinates of shape (..., height, width).
     y : Array | NativeArray
-        The y coordinates of shape (..., width, height).
+        The y coordinates of shape (..., height, width).
     **kwargs : Any
         Additional keyword arguments to be passed to the remap function.
 
