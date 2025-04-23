@@ -3,14 +3,15 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+import attrs
 import ivy
 import numpy as np
 from ivy import Array
-from quaternion import as_quat_array, quaternion, rotate_vectors
+from quaternion import as_float_array, as_quat_array, quaternion, rotate_vectors
 
 from vr180_convert.remapper.base import RemapperBase, UnfitError
 
-from .euclidean import Euclidean3DRotator
+from .euclidean import Euclidean3DRotator, equidistant_to_3d
 from .feature_match import MatchResult, feature_match_points
 
 
@@ -110,8 +111,11 @@ def rotation_match_robust(
     return q, bad_idx
 
 
+@attrs.define(kw_only=True)
 class RotationMatchRemapper(RemapperBase):
-    requires_image: bool = True
+    """The previous remapper should output equidistant points."""
+
+    requires_image: bool = attrs.field(default=True, init=False)
     rotation_match_kwargs: dict[str, Any] | None = None
     childl: Euclidean3DRotator | None = None
     childr: Euclidean3DRotator | None = None
@@ -121,30 +125,41 @@ class RotationMatchRemapper(RemapperBase):
         self, image: Array, inv: Callable[[Array, Array], tuple[Array, Array]]
     ) -> None:
         shape = image.shape
-        image = ivy.reshape((-1, *shape[-4:]), image)
+        # [B, 2, H, W, C]
+        image = ivy.reshape(image, (-1, *shape[-4:]))
         qs = []
         for images_lr in image:
-            match = feature_match_points(images_lr[0, :, :, :], images_lr[1, :, :, :])
+            match = feature_match_points(
+                images_lr[0, ...], images_lr[1, ...], scale=0.25
+            )
             self.match = match
-            q = rotation_match_robust(
-                points_to_be_rotated=match.points1,
-                points=match.points2,
+            points_x = ivy.stack([match.points1[:, 0], match.points2[:, 0]], axis=0)
+            points_y = ivy.stack([match.points1[:, 1], match.points2[:, 1]], axis=0)
+            points_translated_x, points_translated_y = inv(points_x, points_y)
+            points_v = equidistant_to_3d(points_translated_x, points_translated_y)
+            q, _ = rotation_match_robust(
+                points_to_be_rotated=points_v[0, ...],
+                points=points_v[1, ...],
                 **(self.rotation_match_kwargs or {}),
             )
-            qs.append(q)
-        qs = np.asarray(qs).reshape(shape[:-4] + (4,))
+            qs.append(as_float_array(q))
+        qs = as_quat_array(np.stack(qs).reshape(shape[:-4] + (4,)))
+        phi = np.arccos(qs.w)  # type: ignore
+        half_qs = np.sin(phi / 2) / np.sin(phi) * qs + 0.5
         self.childl = Euclidean3DRotator(
-            rotation=qs,
+            rotation=np.conj(half_qs),
         )
         self.childr = Euclidean3DRotator(
-            rotation=qs,
+            rotation=half_qs,
         )
 
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         if self.childl is None or self.childr is None:
             raise UnfitError(self)
-        xl, yl = x[..., 0, :, :, :], y[..., 0, :, :, :]
-        xr, yr = x[..., 1, :, :, :], y[..., 1, :, :, :]
+        x = ivy.broadcast_to(x, (*x.shape[:-3], 2, *x.shape[-2:]))
+        y = ivy.broadcast_to(y, (*y.shape[:-3], 2, *y.shape[-2:]))
+        xl, yl = x[..., 0, :, :], y[..., 0, :, :]
+        xr, yr = x[..., 1, :, :], y[..., 1, :, :]
         xr, yr = self.childl.remap(xr, yr, **kwargs)
         xl, yl = self.childr.remap(xl, yl, **kwargs)
         return ivy.stack([xl, xr], axis=-3), ivy.stack([yl, yr], axis=-3)
@@ -154,8 +169,10 @@ class RotationMatchRemapper(RemapperBase):
     ) -> tuple[Array, Array]:
         if self.childl is None or self.childr is None:
             raise ValueError("Remapper has not been called yet.")
-        xl, yl = x[..., 0, :, :, :], y[..., 0, :, :, :]
-        xr, yr = x[..., 1, :, :, :], y[..., 1, :, :, :]
+        x = ivy.broadcast_to(x, (*x.shape[:-3], 2, *x.shape[-2:]))
+        y = ivy.broadcast_to(y, (*y.shape[:-3], 2, *y.shape[-2:]))
+        xl, yl = x[..., 0, :, :], y[..., 0, :, :]
+        xr, yr = x[..., 1, :, :], y[..., 1, :, :]
         xr, yr = self.childl.inverse_remap(xr, yr, **kwargs)
         xl, yl = self.childr.inverse_remap(xl, yl, **kwargs)
         return ivy.stack([xl, xr], axis=-3), ivy.stack([yl, yr], axis=-3)

@@ -9,10 +9,10 @@ from ivy import Array
 
 @attrs.frozen(kw_only=True)
 class MatchResult:
-    points1: Sequence[tuple[float, float]]
-    """The points in image 1."""
-    points2: Sequence[tuple[float, float]]
-    """The points in image 2."""
+    points1: Array
+    """The points in image 1 of shape (N, 2). [x, y]"""
+    points2: Array
+    """The points in image 2 of shape (N, 2). [x, y]"""
     kp1: Sequence[cv.KeyPoint]
     """The keypoints in image 1."""
     kp2: Sequence[cv.KeyPoint]
@@ -54,6 +54,8 @@ def feature_match_points(
     """
     feature_detector = feature_detector or cv.AKAZE.create()
     matcher = matcher or cv.BFMatcher()
+    image1 = ivy.asarray(image1).to_numpy()
+    image2 = ivy.asarray(image2).to_numpy()
 
     # Resize the image if scale is not None
     if scale is not None:

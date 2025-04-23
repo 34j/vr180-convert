@@ -68,8 +68,7 @@ class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
 
     def transform(self, image: Array, /, **kwargs: Any) -> Array:
         image = ivy.asarray(image)
-        for i in range(len(self.remappers)):
-            remapper = self.remappers[i]
+        for i, remapper in enumerate(list(self.remappers)):
             if remapper.requires_image:
 
                 def inner(
@@ -84,6 +83,7 @@ class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
         xmap, ymap = ivy.meshgrid(
             ivy.arange(self.size_output[0]), ivy.arange(self.size_output[1])
         )
+        xmap, ymap = xmap[None, ...], ymap[None, ...]
         for remapper in reversed(self.remappers):
             xmap, ymap = remapper.remap(xmap, ymap, **kwargs)
         return _remap(image, xmap, ymap, **(self.remap_kwargs or {}))

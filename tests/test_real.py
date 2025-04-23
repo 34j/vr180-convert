@@ -14,6 +14,7 @@ from vr180_convert.remapper.equidistant import (
 from vr180_convert.remapper.fisheye import FisheyeDecoder
 from vr180_convert.remapper.normalize import NormalizeRemapper
 from vr180_convert.remapper.radius import AutoDenormalizeRemapper
+from vr180_convert.remapper.rotation_match import RotationMatchRemapper
 from vr180_convert.remapper.transformer import RemapperTransformer
 
 _TEST_DIR = Path("tests/.cache")
@@ -44,6 +45,7 @@ def test_real(
             remappers=[
                 AutoDenormalizeRemapper(strategy="auto"),
                 FisheyeDecoder("equidistant"),
+                RotationMatchRemapper(),
                 EquirectangularEncoder(),
                 NormalizeRemapper(),
             ],
