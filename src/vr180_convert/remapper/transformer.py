@@ -71,7 +71,7 @@ class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
         xmap, ymap = ivy.meshgrid(
             ivy.arange(self.size_output[0]), ivy.arange(self.size_output[1])
         )
-        for remapper in [*self.remappers]:
+        for remapper in reversed(self.remappers):
             if remapper.requires_image:
                 image = _remap(x, xmap, ymap, **(self.remap_kwargs or {}))
                 xmap, ymap = remapper.remap(xmap, ymap, image=image, **kwargs)
