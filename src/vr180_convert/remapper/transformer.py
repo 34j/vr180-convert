@@ -45,8 +45,8 @@ def _remap(
     image = ivy.moveaxis(image, -1, 1)
     x = ivy.broadcast_to(x, (*shape_extra, *x.shape[-2:])).reshape((-1, *x.shape[-2:]))
     y = ivy.broadcast_to(y, (*shape_extra, *y.shape[-2:])).reshape((-1, *y.shape[-2:]))
-    x = 2 * x / (x.shape[-2] - 1) - 1
-    y = 2 * y / (y.shape[-1] - 1) - 1
+    x = 2 * x / (image.shape[-2] - 1) - 1
+    y = 2 * y / (image.shape[-1] - 1) - 1
     xy = xy = ivy.stack([x, y], axis=-1)
     if ivy.current_backend_str() != "torch":
         image = torch.from_numpy(ivy.to_numpy(image))
