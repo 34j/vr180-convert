@@ -36,19 +36,25 @@ def _remap(
         Additional keyword arguments to be passed to the remap function.
 
     """
-    shape = image.shape
-    image = ivy.reshape(image, (-1, *shape[-3:]))
+    shape_extra = ivy.broadcast_shapes(
+        ivy.shape(image)[:-3], ivy.shape(x)[:-2], ivy.shape(y)[:-2]
+    )
+    image = ivy.broadcast_to(image, (*shape_extra, *image.shape[-3:])).reshape(
+        (-1, *image.shape[-3:])
+    )
     image = ivy.moveaxis(image, -1, 1)
-    x = ivy.reshape(x, (-1, *shape[-3:-1]))
-    y = ivy.reshape(y, (-1, *shape[-3:-1]))
+    x = ivy.broadcast_to(x, (*shape_extra, *x.shape[-2:])).reshape((-1, *x.shape[-2:]))
+    y = ivy.broadcast_to(y, (*shape_extra, *y.shape[-2:])).reshape((-1, *y.shape[-2:]))
     x = 2 * x / (x.shape[-2] - 1) - 1
     y = 2 * y / (y.shape[-1] - 1) - 1
-    result = F.grid_sample(
-        torch.tensor(image).float(),
-        torch.tensor(ivy.stack([x, y], axis=-1)).float(),
-        **kwargs,
-    ).moveaxis(1, -1)
-    result = result.reshape((*shape[:-3], *result.shape[-3:]))
+    xy = xy = ivy.stack([x, y], axis=-1)
+    if ivy.current_backend_str() != "torch":
+        image = torch.from_numpy(ivy.to_numpy(image))
+        xy = torch.from_numpy(ivy.to_numpy(ivy.stack([x, y], axis=-1)))
+    result = F.grid_sample(image.float(), xy.float(), **kwargs).moveaxis(1, -1)
+    result = result.reshape((*shape_extra, *result.shape[-3:]))
+    if ivy.current_backend_str() == "torch":
+        result = ivy.asarray(result)
     return ivy.asarray(result.cpu().numpy())
 
 
