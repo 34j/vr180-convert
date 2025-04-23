@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import cv2 as cv
 import ivy
@@ -20,8 +20,14 @@ _TEST_DIR = Path("tests/.cache")
 _TEST_IMAGE_PATH = _TEST_DIR / "test.jpg"
 
 
+@pytest.fixture(autouse=True, scope="session", params=["numpy", "torch"])
+def setup(request: pytest.FixtureRequest) -> None:
+    ivy.set_backend(request.param)
+    ivy.set_default_dtype(ivy.float64)
+
+
 @pytest.fixture(scope="session", autouse=True)
-def image() -> Array:
+def image(setup: Any) -> Array:
     _TEST_DIR.mkdir(exist_ok=True)
     return generate_test_image(256, _TEST_IMAGE_PATH)
 
