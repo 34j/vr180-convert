@@ -4,8 +4,8 @@ import attrs
 import ivy
 from ivy import Array
 
-from vr180_convert.remapper.base import RemapperBase
-from vr180_convert.remapper.inverse import InverseRemapper
+from .base import RemapperBase
+from .inverse import InverseRemapper
 
 
 def equidistant_to_3d(x: Array, y: Array) -> Array:

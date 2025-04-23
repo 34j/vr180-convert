@@ -4,8 +4,8 @@ import attrs
 import ivy
 from ivy import Array
 
-from vr180_convert.remapper.inverse import InverseRemapper
-from vr180_convert.remapper.polar_roll import PolarRollRemapper
+from .inverse import InverseRemapper
+from .polar_roll import PolarRollRemapper
 
 
 @attrs.define()

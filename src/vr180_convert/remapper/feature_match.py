@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence
 
 import attrs
 import cv2 as cv

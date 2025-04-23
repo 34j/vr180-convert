@@ -9,7 +9,8 @@ import torch
 import torch.nn.functional as F
 from ivy import Array, NativeArray
 
-from ..base import TransformerBase
+from vr180_convert.base import TransformerBase
+
 from .base import RemapperBase
 
 
