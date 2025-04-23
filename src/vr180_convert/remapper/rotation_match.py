@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Any
 
-import cv2 as cv
+import ivy
 import numpy as np
 from ivy import Array
 from quaternion import as_quat_array, quaternion, rotate_vectors
+
+from vr180_convert.remapper.base import RemapperBase
+
+from .euclidean import Euclidean3DRotator
+from .feature_match import feature_match_points
 
 
 def rotation_match(
@@ -56,7 +61,6 @@ def rotation_match(
     B = np.einsum("jik,jlk->il", S, S)
     eigenvalues, eigenvectors = np.linalg.eig(B)
     q = eigenvectors[:, np.argmin(eigenvalues)]
-    np.sqrt(eigenvalues.min()) / len(points)
     return as_quat_array([q[..., 3], q[..., 0], q[..., 1], q[..., 2]])
 
 
@@ -105,58 +109,35 @@ def rotation_match_robust(
     return q, bad_idx
 
 
-def match_points(image1: Array, image2: Array, *, scale: float = 1) -> tuple[
-    Sequence[tuple[float, float]],
-    Sequence[tuple[float, float]],
-    Array,
-    Array,
-    Array,
-    Array,
-    Array,
-]:
-    """
-    Match the points in two images.
+class RotationMatchRemapper(RemapperBase):
+    requires_image: bool = True
+    rotation_match_kwargs: dict[str, Any] | None = None
+    child: Euclidean3DRotator | None = None
 
-    Parameters
-    ----------
-    image1 : Array
-        Image 1.
-    image2 : Array
-        Image 2.
-
-    Returns
-    -------
-    tuple[Sequence[tuple[float, float]], Sequence[tuple[float, float]]]
-        The points in image1 and image2.
-
-    """
-    akaze = cv.AKAZE_create()
-    if scale != 1:
-        image1 = cv.resize(
-            image1, (int(image1.shape[1] * scale), int(image1.shape[0] * scale))
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
+        images = kwargs.pop("images")
+        if images is None:
+            raise ValueError("images must be provided.")
+        shape = images.shape
+        images = ivy.reshape((-1, *shape[-3:]), images)
+        qs = []
+        for images_lr in images:
+            match = feature_match_points(images_lr[0, :, :], images_lr[1, :, :])
+            q = rotation_match_robust(
+                points_to_be_rotated=match.points1,
+                points=match.points2,
+                **(self.rotation_match_kwargs or {}),
+            )
+            qs.append(q)
+        qs = np.asarray(qs).reshape(shape[:-3] + (4,))
+        self.child = Euclidean3DRotator(
+            rotation=qs,
         )
-        image2 = cv.resize(
-            image2, (int(image2.shape[1] * scale), int(image2.shape[0] * scale))
-        )
-    kp1, des1 = akaze.detectAndCompute(image1, None)
-    kp2, des2 = akaze.detectAndCompute(image2, None)
-    bf = cv.BFMatcher()
-    matches = bf.match(des1, des2)
-    points1, points2 = [], []
-    for m in matches:
-        points1.append(kp1[m.queryIdx].pt)
-        points2.append(kp2[m.trainIdx].pt)
-    points1_ = np.array(points1)
-    points2_ = np.array(points2)
-    if scale != 1:
-        points1_ /= scale
-        points2_ /= scale
-    return (
-        points1_,
-        points2_,
-        np.array(kp1),
-        np.array(kp2),
-        np.array(matches),
-        image1,
-        image2,
-    )
+        return self.child.remap(x, y, **kwargs)
+
+    def inverse_remap(
+        self, x: Array, y: Array, /, **kwargs: Any
+    ) -> tuple[Array, Array]:
+        if self.child is None:
+            raise ValueError("Remapper has not been called yet.")
+        return self.child.inverse_remap(x, y, **kwargs)

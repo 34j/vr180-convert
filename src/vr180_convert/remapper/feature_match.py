@@ -34,9 +34,9 @@ def feature_match_points(
     Parameters
     ----------
     image1 : Array
-        Image 1.
+        Image 1 of shape (height, width, channels).
     image2 : Array
-        Image 2.
+        Image 2 of shape (height, width, channels).
     scale : float, optional
         Rescale the image to pass to the feature detector
         for faster processing. The default is None.
