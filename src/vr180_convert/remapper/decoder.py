@@ -2,7 +2,7 @@ import warnings
 from typing import Any, Literal
 
 import attrs
-import numpy as np
+import ivy
 from ivy import Array
 
 from vr180_convert.remapper.polar_roll import PolarRollRemapper
@@ -60,10 +60,10 @@ class RectilinearDecoder(PolarRollRemapper):
     def transform_polar(
         self, theta: Array, roll: Array, **kwargs: Any
     ) -> tuple[Array, Array]:
-        return np.tan(theta) * self.factor, roll
+        return ivy.tan(theta) * self.factor, roll
 
     def inverse_transform_polar(
         self, theta: Array, roll: Array, **kwargs: Any
     ) -> tuple[Array, Array]:
         # fov = 2 arctan sensor_width / (2 * focal_length)
-        return np.arctan(theta / self.factor), roll
+        return ivy.arctan(theta / self.factor), roll
