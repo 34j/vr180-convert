@@ -27,7 +27,7 @@ vr180-convert = "vr180_convert.cli:app"
 v1c = "vr180_convert.cli:app"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 rich = ">=10"
 typer = "^0.12.0"
 opencv-python = "^4.9.0.80"
@@ -38,6 +38,7 @@ python-xmp-toolkit = {version="^2.0.2", optional=true}
 seaborn = "^0.13.2"
 ivy = "^1.0.0.4"
 torch = "^2.6.0"
+numpy = "^2.2.5"
 
 [tool.poetry.extras]
 xmp = ["python-xmp-toolkit"]
