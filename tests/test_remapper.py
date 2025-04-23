@@ -109,18 +109,3 @@ def test_apply(
 #     x = np.random.rand(101, 100)
 #     y = np.random.rand(101, 100)
 #     assert_allclose(equidistant_from_3d(equidistant_to_3d(x, y)), (x, y))
-
-
-# @pytest.mark.parametrize(
-#     "rotation",
-#     [
-#         from_rotation_vector([0.1, 0.2, 0.3]),
-#     ],
-# )
-# def test_rotation_match(rotation: quaternion) -> None:
-#     random_points = np.random.rand(100, 3)
-#     random_points_rotated = rotate_vectors(rotation, random_points)
-#     rotation_est = rotation_match(random_points, random_points_rotated)
-#     assert allclose(rotation, rotation_est, atol=1e-3) or allclose(
-#         -rotation, rotation_est, atol=1e-3
-#     )
