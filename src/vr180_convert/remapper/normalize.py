@@ -17,11 +17,11 @@ class NormalizeRemapper(RemapperBase):
     If "max", the scale is the maximum of the width and height."""
 
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
-        center = self.center or (x.shape[1] / 2, x.shape[0] / 2)
+        center = self.center or (x.shape[-2] / 2, x.shape[-1] / 2)
         scale = (
-            min(x.shape[1], x.shape[0])
+            min(x.shape[-2], x.shape[-1])
             if self.scale in ["min", None]
-            else max(x.shape[1], x.shape[0]) if self.scale == "max" else self.scale
+            else max(x.shape[-2], x.shape[-1]) if self.scale == "max" else self.scale
         )
         x = (x - center[0]) / scale * 2
         y = (y - center[1]) / scale * 2
@@ -30,11 +30,11 @@ class NormalizeRemapper(RemapperBase):
     def inverse_remap(
         self, x: Array, y: Array, /, **kwargs: Any
     ) -> tuple[Array, Array]:
-        center = self.center or (x.shape[1] / 2, x.shape[0] / 2)
+        center = self.center or (x.shape[-2] / 2, x.shape[-1] / 2)
         scale = (
-            min(x.shape[1], x.shape[0])
+            min(x.shape[-2], x.shape[-1])
             if self.scale in ["min", None]
-            else max(x.shape[1], x.shape[0]) if self.scale == "max" else self.scale
+            else max(x.shape[-2], x.shape[-1]) if self.scale == "max" else self.scale
         )
         x = x * scale[0] + center[0]
         y = y * scale[1] + center[1]
