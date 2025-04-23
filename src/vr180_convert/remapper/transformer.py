@@ -66,11 +66,8 @@ class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
 
     """Base class for transformers."""
 
-    def transform(self, x: Array, /, **kwargs: Any) -> Array:
-        x = ivy.asarray(x)
-        xmap, ymap = ivy.meshgrid(
-            ivy.arange(self.size_output[0]), ivy.arange(self.size_output[1])
-        )
+    def transform(self, image: Array, /, **kwargs: Any) -> Array:
+        image = ivy.asarray(image)
         for i in range(len(self.remappers)):
             remapper = self.remappers[i]
             if remapper.requires_image:
@@ -82,11 +79,14 @@ class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
                         x, y = remapper_before.inverse_remap(x, y, **kwargs_inner)
                     return x, y
 
-                remapper.fit(x, inner, **kwargs)
+                remapper.fit(image, inner, **kwargs)
 
+        xmap, ymap = ivy.meshgrid(
+            ivy.arange(self.size_output[0]), ivy.arange(self.size_output[1])
+        )
         for remapper in reversed(self.remappers):
             xmap, ymap = remapper.remap(xmap, ymap, **kwargs)
-        return _remap(x, xmap, ymap, **(self.remap_kwargs or {}))
+        return _remap(image, xmap, ymap, **(self.remap_kwargs or {}))
 
-    def inverse_transform(self, x: Array, /, **kwargs: Any) -> Array:
+    def inverse_transform(self, image: Array, /, **kwargs: Any) -> Array:
         raise NotImplementedError()

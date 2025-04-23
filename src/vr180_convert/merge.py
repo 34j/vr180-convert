@@ -8,13 +8,13 @@ from .base import TransformerBase
 
 
 class Merger(TransformerBase):
-    def transform(self, x: Array, /, **kwargs: Any) -> Array:
+    def transform(self, image: Array, /, **kwargs: Any) -> Array:
         colors = [(0, 128, 255), (255, 128, 0)]
-        combine = ivy.mean(x[0], axis=-1)[..., None] * ivy.array(colors[0]).reshape(
-            [1] * (x[0].ndim - 1) + [3]
+        combine = ivy.mean(image[0], axis=-1)[..., None] * ivy.array(colors[0]).reshape(
+            [1] * (image[0].ndim - 1) + [3]
         ) + (
-            ivy.mean(x[1], axis=-1)[..., None]
-            * ivy.array(colors[1]).reshape([1] * (x[1].ndim - 1) + [3])
+            ivy.mean(image[1], axis=-1)[..., None]
+            * ivy.array(colors[1]).reshape([1] * (image[1].ndim - 1) + [3])
         )
         combine /= 255
         cv.putText(

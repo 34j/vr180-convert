@@ -15,8 +15,8 @@ class InverseTransformer(TransformerBase, Generic[T]):
     transformer: T
     """The transformer to be inverted."""
 
-    def transform(self, x: Array, /, **kwargs: Any) -> Array:
-        return self.transformer.inverse_transform(x, **kwargs)
+    def transform(self, image: Array, /, **kwargs: Any) -> Array:
+        return self.transformer.inverse_transform(image, **kwargs)
 
-    def inverse_transform(self, x: Array, /, **kwargs: Any) -> Array:
-        return self.transformer.transform(x, **kwargs)
+    def inverse_transform(self, image: Array, /, **kwargs: Any) -> Array:
+        return self.transformer.transform(image, **kwargs)

@@ -10,13 +10,13 @@ from ivy import Array
 
 class TransformerBase(metaclass=ABCMeta):
     @abstractmethod
-    def transform(self, x: Array, /, **kwargs: Any) -> Array:
+    def transform(self, image: Array, /, **kwargs: Any) -> Array:
         """
         Transform the input data.
 
         Parameters
         ----------
-        x : Array
+        image : Array
             Image of shape (..., lr, height, width, channels).
 
         Returns
@@ -28,13 +28,13 @@ class TransformerBase(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def inverse_transform(self, x: Array, /, **kwargs: Any) -> Array:
+    def inverse_transform(self, image: Array, /, **kwargs: Any) -> Array:
         """
         Inverse transform the input data.
 
         Parameters
         ----------
-        x : Array
+        image : Array
             Image of shape (..., lr, height, width, channels).
 
         Returns
@@ -61,12 +61,12 @@ class TransformerBase(metaclass=ABCMeta):
 class MultiTransformer(TransformerBase):
     transformers: Sequence[TransformerBase]
 
-    def transform(self, x: Array, /, **kwargs: Any) -> Array:
+    def transform(self, image: Array, /, **kwargs: Any) -> Array:
         for transformer in self.transformers:
-            x = transformer.transform(x, **kwargs)
-        return x
+            image = transformer.transform(image, **kwargs)
+        return image
 
-    def inverse_transform(self, x: Array, /, **kwargs: Any) -> Array:
+    def inverse_transform(self, image: Array, /, **kwargs: Any) -> Array:
         for transformer in reversed(self.transformers):
-            x = transformer.inverse_transform(x, **kwargs)
-        return x
+            image = transformer.inverse_transform(image, **kwargs)
+        return image
