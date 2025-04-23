@@ -37,10 +37,10 @@ def _remap(
 
     """
     shape = image.shape
-    image = image.reshape((-1, *shape[-3:]))
+    image = ivy.reshape(image, (-1, *shape[-3:]))
     image = ivy.moveaxis(image, -1, 1)
-    x = x.reshape((-1, *shape[-3:-1]))
-    y = y.reshape((-1, *shape[-3:-1]))
+    x = ivy.reshape(x, (-1, *shape[-3:-1]))
+    y = ivy.reshape(y, (-1, *shape[-3:-1]))
     x = 2 * x / (x.shape[-2] - 1) - 1
     y = 2 * y / (y.shape[-1] - 1) - 1
     result = F.grid_sample(
@@ -48,7 +48,8 @@ def _remap(
         torch.tensor(ivy.stack([x, y], axis=-1)).float(),
         **kwargs,
     ).moveaxis(1, -1)
-    return ivy.asarray(result.reshape((*shape[:-3], *result.shape[-3:])))
+    result = result.reshape((*shape[:-3], *result.shape[-3:]))
+    return ivy.asarray(result.cpu().numpy())
 
 
 @attrs.define(kw_only=True)
@@ -60,6 +61,7 @@ class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
     """Base class for transformers."""
 
     def transform(self, x: Array, /, **kwargs: Any) -> Array:
+        x = ivy.asarray(x)
         xmap, ymap = ivy.meshgrid(
             ivy.arange(self.size_output[0]), ivy.arange(self.size_output[1])
         )
