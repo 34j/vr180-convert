@@ -1,7 +1,7 @@
 from typing import Any
 
 import attrs
-import numpy as np
+import ivy
 from ivy import Array
 
 from vr180_convert.remapper.base import RemapperBase
@@ -27,10 +27,10 @@ def equidistant_to_3d(x: Array, y: Array) -> Array:
         The 3D unit vector.
 
     """
-    phi = np.arctan2(x, y)
-    theta = np.sqrt(x**2 + y**2)
-    v = np.stack(
-        [np.sin(theta) * np.sin(phi), np.sin(theta) * np.cos(phi), np.cos(theta)],
+    phi = ivy.arctan2(x, y)
+    theta = ivy.sqrt(x**2 + y**2)
+    v = ivy.stack(
+        [ivy.sin(theta) * ivy.sin(phi), ivy.sin(theta) * ivy.cos(phi), ivy.cos(theta)],
         axis=-1,
     )
     return v
@@ -51,10 +51,10 @@ def equidistant_from_3d(v: Array) -> tuple[Array, Array]:
         The x and y coordinates in equidistant fisheye format.
 
     """
-    theta = np.arccos(v[..., 2])
-    phi = np.arctan2(v[..., 0], v[..., 1])
-    x = theta * np.sin(phi)
-    y = theta * np.cos(phi)
+    theta = ivy.arccos(v[..., 2])
+    phi = ivy.arctan2(v[..., 0], v[..., 1])
+    x = theta * ivy.sin(phi)
+    y = theta * ivy.cos(phi)
     return x, y
 
 
@@ -69,24 +69,24 @@ class EquirectangularEncoder(RemapperBase):
         # latitude: 日本語で緯度, phi
         # longitude: 日本語で経度, theta
         if self.is_latitude_y:
-            theta_lat = y * (np.pi / 2)
-            phi_lon = x * (np.pi / 2)
-            v = np.stack(
+            theta_lat = y * (ivy.pi / 2)
+            phi_lon = x * (ivy.pi / 2)
+            v = ivy.stack(
                 [
-                    np.cos(theta_lat) * np.sin(phi_lon),
-                    np.sin(theta_lat),
-                    np.cos(theta_lat) * np.cos(phi_lon),
+                    ivy.cos(theta_lat) * ivy.sin(phi_lon),
+                    ivy.sin(theta_lat),
+                    ivy.cos(theta_lat) * ivy.cos(phi_lon),
                 ],
                 axis=-1,
             )
         else:
-            theta_lat = x * (np.pi / 2)
-            phi_lon = y * (np.pi / 2)
-            v = np.stack(
+            theta_lat = x * (ivy.pi / 2)
+            phi_lon = y * (ivy.pi / 2)
+            v = ivy.stack(
                 [
-                    np.sin(theta_lat),
-                    np.cos(theta_lat) * np.sin(phi_lon),
-                    np.cos(theta_lat) * np.cos(phi_lon),
+                    ivy.sin(theta_lat),
+                    ivy.cos(theta_lat) * ivy.sin(phi_lon),
+                    ivy.cos(theta_lat) * ivy.cos(phi_lon),
                 ],
                 axis=-1,
             )
@@ -98,15 +98,15 @@ class EquirectangularEncoder(RemapperBase):
     ) -> tuple[Array, Array]:
         v = equidistant_to_3d(x, y)
         if self.is_latitude_y:
-            theta_lat = np.arcsin(v[..., 1])
-            phi_lon = np.arctan2(v[..., 0], v[..., 2])
-            x = phi_lon / (np.pi / 2)
-            y = theta_lat / (np.pi / 2)
+            theta_lat = ivy.arcsin(v[..., 1])
+            phi_lon = ivy.arctan2(v[..., 0], v[..., 2])
+            x = phi_lon / (ivy.pi / 2)
+            y = theta_lat / (ivy.pi / 2)
         else:
-            theta_lat = np.arcsin(v[..., 0])
-            phi_lon = np.arctan2(v[..., 1], v[..., 2])
-            x = theta_lat / (np.pi / 2)
-            y = phi_lon / (np.pi / 2)
+            theta_lat = ivy.arcsin(v[..., 0])
+            phi_lon = ivy.arctan2(v[..., 1], v[..., 2])
+            x = theta_lat / (ivy.pi / 2)
+            y = phi_lon / (ivy.pi / 2)
         return x, y
 
 
