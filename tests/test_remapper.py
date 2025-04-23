@@ -66,7 +66,7 @@ def test_fisheye(
             encoder,
             NormalizeRemapper(),
         ],
-        size_output=(256, 256),
+        size_output=(512, 512),
     )
     image = t.transform(image)
     # save image

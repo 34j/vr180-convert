@@ -42,7 +42,7 @@ def test_real(
     t = (
         RemapperTransformer(
             remappers=[
-                AutoDenormalizeRemapper(strategy="max"),
+                AutoDenormalizeRemapper(strategy="auto"),
                 FisheyeDecoder("equidistant"),
                 EquirectangularEncoder(),
                 NormalizeRemapper(),
@@ -54,6 +54,6 @@ def test_real(
     image = t.transform(image)
     # save image
     cv.imwrite(
-        (_TEST_DIR / "test2.jpg").as_posix(),
+        (_TEST_DIR / "test.real.jpg").as_posix(),
         ivy.to_numpy(image).astype(np.float32),
     )
