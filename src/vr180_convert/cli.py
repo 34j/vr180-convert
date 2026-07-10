@@ -21,18 +21,20 @@ from rich.logging import RichHandler
 from vr180_convert.cli_gui import get_position_gui
 from vr180_convert.divide import Concater
 from vr180_convert.merge import Merger
-from vr180_convert.remapper.base import RemapperBase
-from vr180_convert.remapper.equidistant import EquirectangularEncoder, equidistant_to_3d
-from vr180_convert.remapper.euclidean import Euclidean3DRotator
-from vr180_convert.remapper.fisheye import FisheyeDecoder
-from vr180_convert.remapper.normalize import NormalizeRemapper
-from vr180_convert.remapper.radius import AutoDenormalizeRemapper, _get_radius_smart
-from vr180_convert.remapper.rotation_match import (
+from vr180_convert.remapper import (
+    AutoDenormalizeRemapper,
+    EquirectangularEncoder,
+    Euclidean3DRotator,
+    FisheyeDecoder,
+    NormalizeRemapper,
     PerEyeRotator,
+    RemapperBase,
+    RemapperTransformer,
     RotationMatchRemapper,
+    equidistant_to_3d,
     rotation_match_robust,
 )
-from vr180_convert.remapper.transformer import RemapperTransformer
+from vr180_convert.remapper.radius import _get_radius_smart
 from vr180_convert.search import find_time_matched_image
 
 LOG = getLogger(__name__)
@@ -393,12 +395,14 @@ def swap(
 def _eval_transformer(expr: str) -> list[RemapperBase]:
     """Evaluate a transformer expression and return a list of remappers."""
     import numpy as np  # noqa: F401 - needed for eval
-    from numpy.quaternion import from_rotation_vector  # noqa: F401 - needed for eval
+    from quaternion import from_rotation_vector  # noqa: F401 - needed for eval
 
-    from vr180_convert.remapper.equidistant import EquirectangularEncoder  # noqa: F401 - needed for eval
-    from vr180_convert.remapper.euclidean import Euclidean3DRotator  # noqa: F401 - needed for eval
-    from vr180_convert.remapper.fisheye import FisheyeDecoder  # noqa: F401 - needed for eval
-    from vr180_convert.remapper.polar_roll import PolarRollRemapper  # noqa: F401 - needed for eval
+    from vr180_convert.remapper import (
+        EquirectangularEncoder,  # noqa: F401 - needed for eval
+        Euclidean3DRotator,  # noqa: F401 - needed for eval
+        FisheyeDecoder,  # noqa: F401 - needed for eval
+        PolarRollRemapper,  # noqa: F401 - needed for eval
+    )
 
     result = eval(expr)  # noqa: S307
     if isinstance(result, RemapperBase):
