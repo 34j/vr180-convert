@@ -82,12 +82,16 @@ def feature_match_points(
         points1.append(kp1[m.queryIdx].pt)
         points2.append(kp2[m.trainIdx].pt)
 
-    # Scale the points back to the original image size
+    # Scale the points and keypoints back to the original image size
     points1_ = xp.asarray(points1)
     points2_ = xp.asarray(points2)
     if scale is not None:
         points1_ /= scale
         points2_ /= scale
+        for kp in kp1:
+            kp.pt = (kp.pt[0] / scale, kp.pt[1] / scale)
+        for kp in kp2:
+            kp.pt = (kp.pt[0] / scale, kp.pt[1] / scale)
 
     # Return the match result
     return MatchResult(

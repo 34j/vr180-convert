@@ -114,6 +114,44 @@ def rotation_match_robust(
 
 
 @attrs.define(kw_only=True)
+class PerEyeRotator(RemapperBase):
+    """Apply different Euclidean3DRotator to left and right eyes."""
+
+    childl: Euclidean3DRotator | None = None
+    """Rotation for the left eye."""
+    childr: Euclidean3DRotator | None = None
+    """Rotation for the right eye."""
+
+    def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
+        if self.childl is None or self.childr is None:
+            raise UnfitError(self)
+        xp = array_api_compat.array_namespace(x, y)
+        x = xp.broadcast_to(x, (*x.shape[:-3], 2, *x.shape[-2:]))
+        y = xp.broadcast_to(y, (*y.shape[:-3], 2, *y.shape[-2:]))
+        xl, yl = x[..., 0, :, :], y[..., 0, :, :]
+        xr, yr = x[..., 1, :, :], y[..., 1, :, :]
+        xl, yl = self.childl.remap(xl, yl, **kwargs)
+        xr, yr = self.childr.remap(xr, yr, **kwargs)
+        xr, yr = xp.asarray(xr), xp.asarray(yr)
+        xl, yl = xp.asarray(xl), xp.asarray(yl)
+        return xp.stack([xl, xr], axis=-3), xp.stack([yl, yr], axis=-3)
+
+    def inverse_remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
+        if self.childl is None or self.childr is None:
+            raise UnfitError(self)
+        xp = array_api_compat.array_namespace(x, y)
+        x = xp.broadcast_to(x, (*x.shape[:-3], 2, *x.shape[-2:]))
+        y = xp.broadcast_to(y, (*y.shape[:-3], 2, *y.shape[-2:]))
+        xl, yl = x[..., 0, :, :], y[..., 0, :, :]
+        xr, yr = x[..., 1, :, :], y[..., 1, :, :]
+        xl, yl = self.childl.inverse_remap(xl, yl, **kwargs)
+        xr, yr = self.childr.inverse_remap(xr, yr, **kwargs)
+        xr, yr = xp.asarray(xr), xp.asarray(yr)
+        xl, yl = xp.asarray(xl), xp.asarray(yl)
+        return xp.stack([xl, xr], axis=-3), xp.stack([yl, yr], axis=-3)
+
+
+@attrs.define(kw_only=True)
 class RotationMatchRemapper(RemapperBase):
     """The previous remapper should output equidistant points."""
 
@@ -122,6 +160,8 @@ class RotationMatchRemapper(RemapperBase):
     childl: Euclidean3DRotator | None = None
     childr: Euclidean3DRotator | None = None
     match: MatchResult | None = None
+    bad_idx: np.ndarray | None = None
+    """Boolean mask of outlier matches from robust rotation matching."""
 
     def fit(self, image: Array, inv: Callable[[Array, Array], tuple[Array, Array]]) -> None:
         xp = array_api_compat.array_namespace(image)
@@ -136,11 +176,12 @@ class RotationMatchRemapper(RemapperBase):
             points_y = xp.stack([match.points1[:, 1], match.points2[:, 1]], axis=0)
             points_translated_x, points_translated_y = inv(points_x, points_y)
             points_v = equidistant_to_3d(points_translated_x, points_translated_y)
-            q, _ = rotation_match_robust(
+            q, bad_idx = rotation_match_robust(
                 points_to_be_rotated=points_v[0, ...],
                 points=points_v[1, ...],
                 **(self.rotation_match_kwargs or {}),
             )
+            self.bad_idx = bad_idx
             qs.append(as_float_array(q))
         qs = as_quat_array(np.stack(qs).reshape((*shape[:-4], 4)))
         # Half-angle quaternion: (1 + q) / |1 + q|  =  cos(phi/2) + sin(phi/2)*axis

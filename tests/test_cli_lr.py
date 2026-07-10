@@ -58,6 +58,7 @@ def test_lr_mapping_types(
     ]
     if use_automatch:
         args.append("--automatch")
+        args.append("fm")
 
     try:
         app(args)

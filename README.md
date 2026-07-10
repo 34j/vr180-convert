@@ -74,11 +74,11 @@ v1c lr left_dir right.jpg
 ```
 
 Since clocks on cameras may not be very accurate in some cases, it is recommended to check how quickly the clocks of the two cameras shift, and synchronize the clocks before shooting.
-However, it can be adjusted by specifying `-ac` option.
+However, it can be adjusted by specifying `--time-calib` option.
 
 ```shell
-v1c lr left.jpg right_dir -ac 1 # the clock of the right camera is 1 second faster / ahead
-v1c lr left_dir right.jpg -ac 1 # the clock of the right camera is 1 second faster / ahead
+v1c lr left.jpg right_dir --time-calib 1 # the clock of the right camera is 1 second faster / ahead
+v1c lr left_dir right.jpg --time-calib 1 # the clock of the right camera is 1 second faster / ahead
 ```
 
 ### Radius estimation
@@ -150,23 +150,16 @@ v1c swap rl.jpg
 
 in case one notices that the left and right images are swapped after the conversion.
 
-### Convert to Google's format (Photo Sphere XMP Metadata)
+### Saving match visualization
 
-This format is special in that it base64-encodes the right-eye image into the metadata of the left-eye image.
-Required for Google Photos, etc.
-
-You can convert the image to this format by:
+When using `--automatch fm`, the match visualization can be saved by specifying `--savematch`.
+The match image is saved alongside the output with a `.match` suffix.
 
 ```shell
-v1c xmp lr.jpg
+v1c lr left.jpg right.jpg --automatch fm --savematch
 ```
 
-The [python-xmp-toolkit](https://github.com/python-xmp-toolkit/python-xmp-toolkit) used in this command requires [exempi](https://libopenraw.freedesktop.org/exempi/) to be installed. Note that if this command is called on Windows, it will attempt to install this library and its dependencies and then run the command on WSL using `subprocess`.
 
-#### References
-
-- [imrivera/google\-photos\-vr180\-test: Test for XMP metadata parsing for VR180 pictures in Google Photos](https://github.com/imrivera/google-photos-vr180-test)
-- [temoki/make_vr180photo_py: 左眼カメラ画像と右眼カメラ画像を結合して VR180 3D フォトを作成する Python スクリプト](https://github.com/temoki/make_vr180photo_py)
 
 ### Custom conversion model
 
@@ -176,8 +169,7 @@ You can also specify the conversion model by adding Python code directly to the 
 v1c lr left.jpg right.jpg --transformer 'EquirectangularEncoder() * Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * FisheyeDecoder("equidistant")'
 ```
 
-If tuple, the first transformer is applied to the left image and the second transformer is applied to the right image. If a single transformer is given, it is applied to both images.
-
+The expression is evaluated and used as the remapper chain, overriding the default pipeline.
 Please refer to the [API documentation](https://vr180-convert.readthedocs.io/) for the available transformers and their parameters.
 For `from_rotation_vector`, please refer to the [numpy-quaternion documentation](https://quaternion.readthedocs.io/en/latest/Package%20API%3A/quaternion/#from_rotation_vector).
 
@@ -188,7 +180,7 @@ To convert a single image, use `v1c s` instead.
 ### Running commands for all images in a directory
 
 ```shell
-find left_dir -type f -name '*.jpg' -exec v1c lr {} right_dir --automatch fm --radius max -ac 0 --out-path out \;
+find left_dir -type f -name '*.jpg' -exec v1c lr {} right_dir --automatch fm --radius max --time-calib 0 --out-path out \;
 ```
 
 ### Help
