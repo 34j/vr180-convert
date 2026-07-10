@@ -143,8 +143,9 @@ class RotationMatchRemapper(RemapperBase):
             )
             qs.append(as_float_array(q))
         qs = as_quat_array(np.stack(qs).reshape((*shape[:-4], 4)))
-        phi = np.arccos(qs.w)  # type: ignore
-        half_qs = np.sin(phi / 2) / np.sin(phi) * qs + 0.5
+        # Half-angle quaternion: (1 + q) / |1 + q|  =  cos(phi/2) + sin(phi/2)*axis
+        one = np.quaternion(1, 0, 0, 0)
+        half_qs = (one + qs) / np.abs(one + qs)
         self.childl = Euclidean3DRotator(
             rotation=np.conj(half_qs),
         )
@@ -160,8 +161,8 @@ class RotationMatchRemapper(RemapperBase):
         y = xp.broadcast_to(y, (*y.shape[:-3], 2, *y.shape[-2:]))
         xl, yl = x[..., 0, :, :], y[..., 0, :, :]
         xr, yr = x[..., 1, :, :], y[..., 1, :, :]
-        xr, yr = self.childl.remap(xr, yr, **kwargs)
-        xl, yl = self.childr.remap(xl, yl, **kwargs)
+        xl, yl = self.childl.remap(xl, yl, **kwargs)
+        xr, yr = self.childr.remap(xr, yr, **kwargs)
         xr, yr = xp.asarray(xr), xp.asarray(yr)
         xl, yl = xp.asarray(xl), xp.asarray(yl)
         return xp.stack([xl, xr], axis=-3), xp.stack([yl, yr], axis=-3)
@@ -174,8 +175,8 @@ class RotationMatchRemapper(RemapperBase):
         y = xp.broadcast_to(y, (*y.shape[:-3], 2, *y.shape[-2:]))
         xl, yl = x[..., 0, :, :], y[..., 0, :, :]
         xr, yr = x[..., 1, :, :], y[..., 1, :, :]
-        xr, yr = self.childl.inverse_remap(xr, yr, **kwargs)
-        xl, yl = self.childr.inverse_remap(xl, yl, **kwargs)
+        xl, yl = self.childl.inverse_remap(xl, yl, **kwargs)
+        xr, yr = self.childr.inverse_remap(xr, yr, **kwargs)
         xr, yr = xp.asarray(xr), xp.asarray(yr)
         xl, yl = xp.asarray(xl), xp.asarray(yl)
         return xp.stack([xl, xr], axis=-3), xp.stack([yl, yr], axis=-3)

@@ -61,7 +61,7 @@ class Euclidean3DRemapper(RemapperBase):
 
     def inverse_remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         v = equidistant_to_3d(x, y)
-        v = self.transform_v(v)
+        v = self.inverse_transform_v(v)
         x, y = equidistant_from_3d(v)
         return x, y
 

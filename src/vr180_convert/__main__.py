@@ -1,5 +1,7 @@
-"""Make the CLI runnable using python -m vr180_convert."""
+"""Make the CLI runnable using ``python -m vr180_convert``."""
+
+import sys
 
 from .cli import app
 
-app(prog_name="vr180-convert")
+app(sys.argv[1:])
