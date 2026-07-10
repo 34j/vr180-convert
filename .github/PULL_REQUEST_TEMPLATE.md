@@ -1,7 +1,7 @@
 <!--
   😀 Wonderful!  Thank you for opening a pull request.
 
-  By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/34j/vr180-convert/blob/main/CODE_OF_CONDUCT.md).
+  By submitting this pull request, you agree to follow our [Code of Conduct](https://github.com/34j/vr180-convert/blob/main/.github/CODE_OF_CONDUCT.md).
 
   Please fill in the information below to expedite the review
   and (hopefully) merge of your change.
@@ -34,14 +34,14 @@
 -->
 
 - [ ] Code is up-to-date with the `main` branch
-- [ ] This pull request follows [Contributing.md](https://github.com/34j/vr180-convert/blob/main/CONTRIBUTING.md)
+- [ ] This pull request follows the [contributing guidelines](https://github.com/34j/vr180-convert/blob/main/CONTRIBUTING.md).
 - [ ] This pull request links relevant issues as `Fixes #0000`
 - [ ] There are new or updated unit tests validating the change
 - [ ] Documentation has been updated to reflect this change
 - [ ] The new commits follow conventions outlined in the [conventional commit spec](https://www.conventionalcommits.org/en/v1.0.0/), such as "fix(api): prevent racing of requests".
 
-> - If pre-commit.ci is failing, try `pre-commit run -a` for further information.
-> - If CI / test is failing, try `poetry run pytest` for further information.
+> - If the lint job is failing, try `prek run -a` for further information.
+> - If CI / test is failing, try `uv run pytest` for further information.
 
 <!--
   🎉 Thank you for contributing!
