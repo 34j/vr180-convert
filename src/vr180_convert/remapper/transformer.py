@@ -3,11 +3,12 @@ from __future__ import annotations
 from abc import ABCMeta
 from typing import Any
 
+import array_api_compat
 import attrs
-import ivy
+import numpy as np
 import torch
 import torch.nn.functional as F
-from ivy import Array, NativeArray
+from array_api.latest import Array
 
 from vr180_convert.base import TransformerBase
 
@@ -15,47 +16,41 @@ from .base import RemapperBase
 
 
 def _remap(
-    image: Array | NativeArray,
-    x: Array | NativeArray,
-    y: Array | NativeArray,
+    image: Array,
+    x: Array,
+    y: Array,
     /,
     **kwargs: Any,
-) -> Any:
+) -> Array:
     """
     Remap the image using the given x and y coordinates.
 
     Parameters
     ----------
-    image : Array | NativeArray
+    image : Array
         The image to be remapped of shape (..., height, width, channels).
-    x : Array | NativeArray
+    x : Array
         The x coordinates of shape (..., height, width).
-    y : Array | NativeArray
+    y : Array
         The y coordinates of shape (..., height, width).
     **kwargs : Any
         Additional keyword arguments to be passed to the remap function.
 
     """
-    shape_extra = ivy.broadcast_shapes(
-        ivy.shape(image)[:-3], ivy.shape(x)[:-2], ivy.shape(y)[:-2]
-    )
-    image = ivy.broadcast_to(image, (*shape_extra, *image.shape[-3:])).reshape(
-        (-1, *image.shape[-3:])
-    )
-    image = ivy.moveaxis(image, -1, 1)
-    x = ivy.broadcast_to(x, (*shape_extra, *x.shape[-2:])).reshape((-1, *x.shape[-2:]))
-    y = ivy.broadcast_to(y, (*shape_extra, *y.shape[-2:])).reshape((-1, *y.shape[-2:]))
+    xp = array_api_compat.array_namespace(image, x, y)
+    shape_extra = xp.broadcast_shapes(image.shape[:-3], x.shape[:-2], y.shape[:-2])
+    image = xp.broadcast_to(image, (*shape_extra, *image.shape[-3:])).reshape((-1, *image.shape[-3:]))
+    image = xp.moveaxis(image, -1, 1)
+    x = xp.broadcast_to(x, (*shape_extra, *x.shape[-2:])).reshape((-1, *x.shape[-2:]))
+    y = xp.broadcast_to(y, (*shape_extra, *y.shape[-2:])).reshape((-1, *y.shape[-2:]))
     x = 2 * x / (image.shape[-1] - 1) - 1
     y = 2 * y / (image.shape[-2] - 1) - 1
-    xy = xy = ivy.stack([x, y], axis=-1)
-    if ivy.current_backend_str() != "torch":
-        image = torch.from_numpy(ivy.to_numpy(image))
-        xy = torch.from_numpy(ivy.to_numpy(ivy.stack([x, y], axis=-1)))
-    result = F.grid_sample(image.float(), xy.float(), **kwargs).moveaxis(1, -1)
+    xy = xp.stack([x, y], axis=-1)
+    image_t = torch.from_numpy(np.asarray(image))
+    xy_t = torch.from_numpy(np.asarray(xy))
+    result = F.grid_sample(image_t.float(), xy_t.float(), **kwargs).moveaxis(1, -1)
     result = result.reshape((*shape_extra, *result.shape[-3:]))
-    if ivy.current_backend_str() == "torch":
-        result = ivy.asarray(result)
-    return ivy.asarray(result.cpu().numpy())
+    return xp.asarray(result.cpu().numpy())
 
 
 @attrs.define(kw_only=True)
@@ -67,22 +62,18 @@ class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
     """Base class for transformers."""
 
     def transform(self, image: Array, /, **kwargs: Any) -> Array:
-        image = ivy.asarray(image)
+        xp = array_api_compat.array_namespace(image)
         for i, remapper in enumerate(list(self.remappers)):
             if remapper.requires_image:
 
-                def inner(
-                    x: Array, y: Array, /, i: int = i, **kwargs_inner: Any
-                ) -> tuple[Array, Array]:
+                def inner(x: Array, y: Array, /, i: int = i, **kwargs_inner: Any) -> tuple[Array, Array]:
                     for remapper_before in self.remappers[:i]:
                         x, y = remapper_before.inverse_remap(x, y, **kwargs_inner)
                     return x, y
 
                 remapper.fit(image, inner, **kwargs)
 
-        xmap, ymap = ivy.meshgrid(
-            ivy.arange(self.size_output[0]), ivy.arange(self.size_output[1])
-        )
+        xmap, ymap = xp.meshgrid(xp.arange(self.size_output[0]), xp.arange(self.size_output[1]))
         xmap, ymap = xmap[None, ...], ymap[None, ...]
         for remapper in reversed(self.remappers):
             xmap, ymap = remapper.remap(xmap, ymap, **kwargs)

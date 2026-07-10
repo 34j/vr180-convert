@@ -1,7 +1,7 @@
 from typing import Any, Literal
 
 import attrs
-from ivy import Array
+from array_api.latest import Array
 
 from vr180_convert.remapper.base import RemapperBase
 
@@ -25,7 +25,9 @@ class NormalizeRemapper(RemapperBase):
         scale = (
             min(x.shape[-2:])
             if self.scale in ["min", None]
-            else max(x.shape[-2:]) if self.scale == "max" else self.scale
+            else max(x.shape[-2:])
+            if self.scale == "max"
+            else self.scale
         )
         self.center_ = center
         self.scale_ = scale
@@ -33,14 +35,14 @@ class NormalizeRemapper(RemapperBase):
         y = (y - center[1]) / scale * 2
         return x, y
 
-    def inverse_remap(
-        self, x: Array, y: Array, /, **kwargs: Any
-    ) -> tuple[Array, Array]:
+    def inverse_remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         center = self.center or (x.shape[-1] / 2, x.shape[-2] / 2)
         scale = (
             min(x.shape[-2:])
             if self.scale in ["min", None]
-            else max(x.shape[-2:]) if self.scale == "max" else self.scale
+            else max(x.shape[-2:])
+            if self.scale == "max"
+            else self.scale
         )
         self.center_ = center
         self.scale_ = scale

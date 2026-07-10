@@ -1,9 +1,8 @@
-from collections.abc import Callable
+
 from typing import Any
 
 import pytest
-from array_api._2024_12 import Array, ArrayNamespaceFull
-from ie_circle import CircleShape, KressShape, Shape
+from array_api._2024_12 import ArrayNamespaceFull
 
 
 @pytest.fixture(scope="session", params=["numpy"])
@@ -52,39 +51,3 @@ def device(request: pytest.FixtureRequest, xp: ArrayNamespaceFull) -> Any:
 def dtype(request: pytest.FixtureRequest, xp: ArrayNamespaceFull) -> str:
     return getattr(xp, request.param)
 
-
-@pytest.fixture(params=[CircleShape(1.0), KressShape()])
-def shape(request: pytest.FixtureRequest) -> Shape:
-    return request.param
-
-
-@pytest.fixture(params=[CircleShape(1.0), KressShape()])
-def shape_h(request: pytest.FixtureRequest) -> Shape:
-    return request.param
-
-
-@pytest.fixture
-def shape_central_difference(
-    shape: Shape, shape_h: Shape
-) -> Callable[[float], tuple[Shape, Shape]]:
-    class _PerturbedShape:
-        """Shape perturbed by adding/subtracting another shape."""
-
-        def __init__(self, base: Shape, pert: Shape, eps: float) -> None:
-            self._base = base
-            self._pert = pert
-            self._eps = eps
-
-        def x(self, t: Array, /) -> Array:
-            return self._base.x(t) + self._eps * self._pert.x(t)
-
-        def dx(self, t: Array, /) -> Array:
-            return self._base.dx(t) + self._eps * self._pert.dx(t)
-
-        def ddx(self, t: Array, /) -> Array:
-            return self._base.ddx(t) + self._eps * self._pert.ddx(t)
-
-    def _make(eps: float) -> tuple[Shape, Shape]:
-        return _PerturbedShape(shape, shape_h, eps), _PerturbedShape(shape, shape_h, -eps)
-
-    return _make

@@ -1,7 +1,7 @@
 from typing import Any, Generic, TypeVar
 
 import attrs
-from ivy import Array
+from array_api.latest import Array
 
 from vr180_convert.remapper.base import RemapperBase
 
@@ -18,7 +18,5 @@ class InverseRemapper(RemapperBase, Generic[T]):
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         return self.transformer.inverse_remap(x, y, **kwargs)
 
-    def inverse_remap(
-        self, x: Array, y: Array, /, **kwargs: Any
-    ) -> tuple[Array, Array]:
+    def inverse_remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         return self.transformer.remap(x, y, **kwargs)

@@ -1,10 +1,10 @@
 from collections.abc import Sequence
 
+import array_api_compat
 import attrs
 import cv2 as cv
-import ivy
 import numpy as np
-from ivy import Array
+from array_api.latest import Array
 
 
 @attrs.frozen(kw_only=True)
@@ -27,7 +27,7 @@ def feature_match_points(
     *,
     scale: float | None = None,
     feature_detector: cv.Feature2D | None = None,
-    matcher: cv.DescriptorMatcher | None = None
+    matcher: cv.DescriptorMatcher | None = None,
 ) -> MatchResult:
     """
     Match the points in two images.
@@ -52,19 +52,22 @@ def feature_match_points(
         The match result containing the points, keypoints and matches.
 
     """
-    feature_detector = feature_detector or cv.AKAZE.create()
+    xp = array_api_compat.array_namespace(image1, image2)
+    feature_detector = feature_detector or cv.ORB.create()
     matcher = matcher or cv.BFMatcher()
-    image1 = ivy.asarray(image1).to_numpy()
-    image2 = ivy.asarray(image2).to_numpy()
+    image1 = np.asarray(image1)
+    image2 = np.asarray(image2)
+
+    # OpenCV feature detectors need uint8 dtype
+    if image1.dtype != np.uint8:
+        image1 = image1.clip(0, 255).astype(np.uint8)
+    if image2.dtype != np.uint8:
+        image2 = image2.clip(0, 255).astype(np.uint8)
 
     # Resize the image if scale is not None
     if scale is not None:
-        image1 = cv.resize(
-            image1, (int(image1.shape[1] * scale), int(image1.shape[0] * scale))
-        )
-        image2 = cv.resize(
-            image2, (int(image2.shape[1] * scale), int(image2.shape[0] * scale))
-        )
+        image1 = cv.resize(image1, (int(image1.shape[1] * scale), int(image1.shape[0] * scale)))
+        image2 = cv.resize(image2, (int(image2.shape[1] * scale), int(image2.shape[0] * scale)))
 
     # Detect and compute the keypoints and descriptors
     kp1, des1 = feature_detector.detectAndCompute(image1, None)
@@ -80,8 +83,8 @@ def feature_match_points(
         points2.append(kp2[m.trainIdx].pt)
 
     # Scale the points back to the original image size
-    points1_ = ivy.asarray(points1)
-    points2_ = ivy.asarray(points2)
+    points1_ = xp.asarray(points1)
+    points2_ = xp.asarray(points2)
     if scale is not None:
         points1_ /= scale
         points2_ /= scale

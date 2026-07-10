@@ -1,11 +1,9 @@
 from pathlib import Path
-from typing import Any
 
 import cv2 as cv
-import ivy
 import numpy as np
 import pytest
-from ivy import Array
+from array_api.latest import Array
 
 from vr180_convert.divide import Concater
 from vr180_convert.remapper.equidistant import (
@@ -20,21 +18,20 @@ from vr180_convert.remapper.transformer import RemapperTransformer
 _TEST_DIR = Path("tests/.cache")
 
 
-@pytest.fixture(autouse=True, scope="session", params=["numpy", "torch"])
-def setup(request: pytest.FixtureRequest) -> None:
-    ivy.set_backend(request.param)
-    ivy.set_default_dtype(ivy.float64)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def image(setup: Any) -> Array:
-    return ivy.stack(
+@pytest.fixture(scope="session", params=["numpy", "torch"])
+def image(request: pytest.FixtureRequest) -> Array:
+    if request.param == "numpy":
+        import array_api_compat.numpy as xp
+    elif request.param == "torch":
+        import array_api_compat.torch as xp
+    img = xp.stack(
         (
-            ivy.asarray(cv.imread("tests/assets/001L.JPG")),
-            ivy.asarray(cv.imread("tests/assets/001R.JPG")),
+            xp.asarray(cv.imread("tests/assets/001L.JPG")),
+            xp.asarray(cv.imread("tests/assets/001R.JPG")),
         ),
         axis=0,
     )
+    return xp.astype(img, xp.float64)
 
 
 def test_real(
@@ -57,5 +54,5 @@ def test_real(
     # save image
     cv.imwrite(
         (_TEST_DIR / "test.real.jpg").as_posix(),
-        ivy.to_numpy(image).astype(np.float32),
+        np.asarray(image).astype(np.float32),
     )

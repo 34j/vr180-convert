@@ -1,9 +1,9 @@
 import warnings
 from typing import Any, Literal
 
+import array_api_compat
 import attrs
-import ivy
-from ivy import Array
+from array_api.latest import Array
 
 from vr180_convert.remapper.polar_roll import PolarRollRemapper
 
@@ -15,9 +15,7 @@ class RectilinearDecoder(PolarRollRemapper):
     # https://en.wikipedia.org/wiki/Image_sensor_format
     focal_length: float
     """The focal length of the lens in mm."""
-    sensor_width: (
-        Literal["35mm", "APS-H", "APS-C", "APS-C-Canon", "Foveon", "MFT"] | str | float
-    ) = "35mm"
+    sensor_width: Literal["35mm", "APS-H", "APS-C", "APS-C-Canon", "Foveon", "MFT"] | str | float = "35mm"
     """The sensor width of the camera in mm if float,
     or in inches if str, or a standard sensor width if str."""
 
@@ -57,13 +55,11 @@ class RectilinearDecoder(PolarRollRemapper):
         """Zoom factor applied after tan."""
         return 2 * self.focal_length / self.sensor_width_mm
 
-    def transform_polar(
-        self, theta: Array, roll: Array, **kwargs: Any
-    ) -> tuple[Array, Array]:
-        return ivy.tan(theta) * self.factor, roll
+    def transform_polar(self, theta: Array, roll: Array, **kwargs: Any) -> tuple[Array, Array]:
+        xp = array_api_compat.array_namespace(theta, roll)
+        return xp.tan(theta) * self.factor, roll
 
-    def inverse_transform_polar(
-        self, theta: Array, roll: Array, **kwargs: Any
-    ) -> tuple[Array, Array]:
+    def inverse_transform_polar(self, theta: Array, roll: Array, **kwargs: Any) -> tuple[Array, Array]:
+        xp = array_api_compat.array_namespace(theta, roll)
         # fov = 2 arctan sensor_width / (2 * focal_length)
-        return ivy.atan(theta / self.factor), roll
+        return xp.atan(theta / self.factor), roll

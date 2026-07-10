@@ -1,9 +1,9 @@
 from abc import abstractmethod
 from typing import Any
 
+import array_api_compat
 import attrs
-import ivy
-from ivy import Array
+from array_api.latest import Array
 
 from vr180_convert.remapper.base import RemapperBase
 
@@ -13,9 +13,7 @@ class PolarRollRemapper(RemapperBase):
     """Transform using polar coordinates."""
 
     @abstractmethod
-    def transform_polar(
-        self, theta: Array, roll: Array, **kwargs: Any
-    ) -> tuple[Array, Array]:
+    def transform_polar(self, theta: Array, roll: Array, **kwargs: Any) -> tuple[Array, Array]:
         """
         Transform using polar coordinates.
 
@@ -37,9 +35,7 @@ class PolarRollRemapper(RemapperBase):
         pass
 
     @abstractmethod
-    def inverse_transform_polar(
-        self, theta: Array, roll: Array, **kwargs: Any
-    ) -> tuple[Array, Array]:
+    def inverse_transform_polar(self, theta: Array, roll: Array, **kwargs: Any) -> tuple[Array, Array]:
         """
         Inverse transform using polar coordinates.
 
@@ -61,19 +57,19 @@ class PolarRollRemapper(RemapperBase):
         pass
 
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
-        theta = ivy.sqrt(x**2 + y**2)
-        roll = ivy.atan2(y, x)
+        xp = array_api_compat.array_namespace(x, y)
+        theta = xp.sqrt(x**2 + y**2)
+        roll = xp.atan2(y, x)
         theta, roll = self.transform_polar(theta, roll, **kwargs)
-        x = theta * ivy.cos(roll)
-        y = theta * ivy.sin(roll)
+        x = theta * xp.cos(roll)
+        y = theta * xp.sin(roll)
         return x, y
 
-    def inverse_remap(
-        self, x: Array, y: Array, /, **kwargs: Any
-    ) -> tuple[Array, Array]:
-        theta = ivy.sqrt(x**2 + y**2)
-        roll = ivy.atan2(y, x)
+    def inverse_remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
+        xp = array_api_compat.array_namespace(x, y)
+        theta = xp.sqrt(x**2 + y**2)
+        roll = xp.atan2(y, x)
         theta, roll = self.inverse_transform_polar(theta, roll, **kwargs)
-        x = theta * ivy.cos(roll)
-        y = theta * ivy.sin(roll)
+        x = theta * xp.cos(roll)
+        y = theta * xp.sin(roll)
         return x, y

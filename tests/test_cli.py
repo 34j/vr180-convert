@@ -7,6 +7,6 @@ runner = CliRunner()
 
 def test_help():
     """The help message includes the CLI name."""
-    result = runner.invoke(app, ["--help"])
+    result = runner.invoke(app, ["--help"], prog_name="vr180-convert")
     assert result.exit_code == 0
-    assert "Add the arguments and print the result" in result.stdout
+    assert "vr180-convert" in result.stdout

@@ -1,7 +1,7 @@
 from typing import Any, Generic, TypeVar
 
 import attrs
-from ivy import Array
+from array_api.latest import Array
 
 from .base import TransformerBase
 

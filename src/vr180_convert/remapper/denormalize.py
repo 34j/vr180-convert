@@ -1,7 +1,7 @@
 from typing import Any
 
 import attrs
-from ivy import Array
+from array_api.latest import Array
 
 from vr180_convert.remapper.base import RemapperBase
 
@@ -22,9 +22,7 @@ class DenormalizeRemapper(RemapperBase):
         y = y * scale[1] + center[1]
         return x, y
 
-    def inverse_remap(
-        self, x: Array, y: Array, /, **kwargs: Any
-    ) -> tuple[Array, Array]:
+    def inverse_remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         scale = self.scale
         center = self.center
         x = (x - center[0]) / scale[0]

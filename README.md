@@ -206,7 +206,13 @@ For more complex transformations, it is recommended to create your own `Remapper
 Note that the transformation is applied in inverse order (new[(x, y)] = old[transform(x, y)], e.g. to decode [orthographic](https://en.wikipedia.org/wiki/Fisheye_lens#Mapping_function) fisheye images, `transform_polar` should be `arcsin(theta)`, not `sin(theta)`.)
 
 ```python
-from vr180_convert import PolarRollRemapper, apply_lr
+from typing import Any
+
+from array_api.latest import Array
+from vr180_convert.remapper.polar_roll import PolarRollRemapper
+from vr180_convert.remapper.equidistant import EquirectangularEncoder
+from vr180_convert.remapper.fisheye import FisheyeDecoder
+
 
 class MyRemapper(PolarRollRemapper):
     def transform_polar(
@@ -214,8 +220,8 @@ class MyRemapper(PolarRollRemapper):
     ) -> tuple[Array, Array]:
         return theta**0.98 + theta**1.01, roll
 
+
 transformer = EquirectangularEncoder() * MyRemapper() * FisheyeDecoder("equidistant")
-apply_lr(transformer, left_path="left.jpg", right_path="right.jpg", out_path="output.jpg")
 ```
 
 ## Tips

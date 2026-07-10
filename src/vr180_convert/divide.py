@@ -1,7 +1,7 @@
 from typing import Any, Literal
 
-import ivy
-from ivy import Array
+import array_api_compat
+from array_api.latest import Array
 
 from .base import TransformerBase
 from .inverse import InverseTransformer
@@ -13,8 +13,9 @@ class Divider(TransformerBase):
     direction: Literal["horizontal", "vertical"] = "horizontal"
 
     def transform(self, image: Array, /, **kwargs: Any) -> Array:
+        xp = array_api_compat.array_namespace(image)
         if self.direction == "horizontal":
-            return ivy.stack(
+            return xp.stack(
                 (
                     image[..., :, : image.shape[-1] // 2, :],
                     image[..., :, image.shape[-1] // 2 :, :],
@@ -22,7 +23,7 @@ class Divider(TransformerBase):
                 axis=-4,
             )
         elif self.direction == "vertical":
-            return ivy.stack(
+            return xp.stack(
                 (
                     image[..., : image.shape[-2] // 2, :, :],
                     image[..., image.shape[-2] // 2 :, :, :],
@@ -31,7 +32,8 @@ class Divider(TransformerBase):
             )
 
     def inverse_transform(self, image: Array, /, **kwargs: Any) -> Array:
-        return ivy.concat(
+        xp = array_api_compat.array_namespace(image)
+        return xp.concat(
             (image[..., 0, :, :, :], image[..., 1, :, :, :]),
             axis=-2 if self.direction == "horizontal" else -3,
         )

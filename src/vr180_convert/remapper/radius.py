@@ -1,9 +1,9 @@
 from collections.abc import Callable
 from typing import Any, Literal
 
+import array_api_compat
 import attrs
-import ivy
-from ivy import Array
+from array_api.latest import Array
 
 from .base import RemapperBase, UnfitError
 from .denormalize import DenormalizeRemapper
@@ -26,6 +26,7 @@ def _get_radius(input: Array, *, threshold: int = 10) -> Array:
         The estimated radius.
 
     """
+    xp = array_api_compat.array_namespace(input)
     height, width = input.shape[-3:-1]
     if width > height:
         center_row = input[..., height // 2, :, :]
@@ -34,13 +35,13 @@ def _get_radius(input: Array, *, threshold: int = 10) -> Array:
     del height, width
 
     # determine if a pixel is black
-    center_row_is_black = ivy.mean(center_row, axis=-1) < threshold
-    center_row_is_black_deriv = ivy.diff(center_row_is_black.astype(int))
+    center_row_is_black = xp.mean(center_row, axis=-1) < threshold
+    center_row_is_black_deriv = xp.diff(xp.astype(center_row_is_black, int))
 
     # first and last 1 in the derivative
-    center_row_black_start = ivy.argmax(center_row_is_black_deriv == 1, axis=-1)
-    center_row_black_end = center_row_is_black_deriv.shape[-1] - ivy.argmax(
-        ivy.flip(center_row_is_black_deriv == -1, axis=-1), axis=-1
+    center_row_black_start = xp.argmax(xp.astype(center_row_is_black_deriv == 1, int), axis=-1)
+    center_row_black_end = center_row_is_black_deriv.shape[-1] - xp.argmax(
+        xp.astype(xp.flip(center_row_is_black_deriv == -1, axis=-1), int), axis=-1
     )
     radius = (center_row_black_end - center_row_black_start) / 2
     return radius
@@ -82,9 +83,7 @@ class AutoDenormalizeRemapper(RemapperBase):
     requires_image: bool = True
     radius: float | None = None
 
-    def fit(
-        self, image: Array, inv: Callable[[Array, Array], tuple[Array, Array]]
-    ) -> None:
+    def fit(self, image: Array, inv: Callable[[Array, Array], tuple[Array, Array]]) -> None:
         radius = _get_radius_smart(self.strategy, image)
         self.radius = radius
         self.child = DenormalizeRemapper(
@@ -96,9 +95,7 @@ class AutoDenormalizeRemapper(RemapperBase):
             raise UnfitError(self)
         return self.child.remap(x, y, **kwargs)
 
-    def inverse_remap(
-        self, x: Array, y: Array, /, **kwargs: Any
-    ) -> tuple[Array, Array]:
+    def inverse_remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         if self.child is None:
             raise UnfitError(self)
         return self.child.inverse_remap(x, y, **kwargs)

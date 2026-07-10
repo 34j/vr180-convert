@@ -5,7 +5,7 @@ from collections.abc import Callable
 from typing import Any
 
 import attrs
-from ivy import Array
+from array_api.latest import Array
 
 
 class UnfitError(RuntimeError):
@@ -29,9 +29,7 @@ class UnfitError(RuntimeError):
 class RemapperBase:
     requires_image: bool = attrs.field(default=False, init=False)
 
-    def fit(
-        self, image: Array, inv: Callable[[Array, Array], tuple[Array, Array]], /
-    ) -> None:
+    def fit(self, image: Array, inv: Callable[[Array, Array], tuple[Array, Array]], /) -> None:
         """
         Fit the transformer to the images.
 
@@ -69,9 +67,7 @@ class RemapperBase:
         """
 
     @abstractmethod
-    def inverse_remap(
-        self, x: Array, y: Array, /, **kwargs: Any
-    ) -> tuple[Array, Array]:
+    def inverse_remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         """
         Inverse transform the input coordinates.
 
@@ -113,9 +109,7 @@ class MultiRemapper(RemapperBase):
             x, y = transformer.remap(x, y, **kwargs)
         return x, y
 
-    def inverse_remap(
-        self, x: Array, y: Array, /, **kwargs: Any
-    ) -> tuple[Array, Array]:
+    def inverse_remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         for transformer in reversed(self.transformers):
             x, y = transformer.inverse_remap(x, y, **kwargs)
         return x, y

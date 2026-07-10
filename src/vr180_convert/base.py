@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from typing import Any
 
 import attrs
-from ivy import Array
+from array_api.latest import Array
 
 
 class TransformerBase(metaclass=ABCMeta):
@@ -47,9 +47,7 @@ class TransformerBase(metaclass=ABCMeta):
 
     def __mul__(self, other: TransformerBase) -> TransformerBase:
         if isinstance(self, MultiTransformer) and isinstance(other, MultiTransformer):
-            return MultiTransformer(
-                transformers=[*self.transformers, *other.transformers]
-            )
+            return MultiTransformer(transformers=[*self.transformers, *other.transformers])
         elif isinstance(self, MultiTransformer):
             return MultiTransformer(transformers=[*self.transformers, other])
         elif isinstance(other, MultiTransformer):

@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Any, Literal
+from typing import Literal
 
 import cv2 as cv
-import ivy
 import numpy as np
 import pytest
-from ivy import Array
+from array_api.latest import Array
 
 from vr180_convert.remapper.equidistant import (
     EquirectangularEncoder,
@@ -20,14 +19,8 @@ _TEST_DIR = Path("tests/.cache")
 _TEST_IMAGE_PATH = _TEST_DIR / "test.jpg"
 
 
-@pytest.fixture(autouse=True, scope="session", params=["numpy", "torch"])
-def setup(request: pytest.FixtureRequest) -> None:
-    ivy.set_backend(request.param)
-    ivy.set_default_dtype(ivy.float64)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def image(setup: Any) -> Array:
+@pytest.fixture(scope="session")
+def image() -> Array:
     _TEST_DIR.mkdir(exist_ok=True)
     return generate_test_image(256, _TEST_IMAGE_PATH)
 
@@ -54,11 +47,7 @@ def test_fisheye(
     ],
     image: Array,
 ) -> None:
-    encoder = (
-        FisheyeEncoder(format)
-        if format != "equirectangular"
-        else EquirectangularEncoder()
-    )
+    encoder = FisheyeEncoder(format) if format != "equirectangular" else EquirectangularEncoder()
     t = RemapperTransformer(
         remappers=[
             AutoDenormalizeRemapper(strategy="max"),
@@ -72,5 +61,5 @@ def test_fisheye(
     # save image
     cv.imwrite(
         (_TEST_DIR / f"test.fisheye.{format}.jpg").as_posix(),
-        ivy.to_numpy(image).astype(np.float32),
+        np.asarray(image).astype(np.float32),
     )

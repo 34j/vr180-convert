@@ -3,10 +3,10 @@ from __future__ import annotations
 from colorsys import hls_to_rgb
 from pathlib import Path
 
+import array_api_compat
 import cv2 as cv
-import ivy
 import numpy as np
-from ivy import Array
+from array_api.latest import Array
 
 
 def generate_test_image(size: int = 2048, path: str | Path | None = None) -> Array:
@@ -57,4 +57,4 @@ def generate_test_image(size: int = 2048, path: str | Path | None = None) -> Arr
         cv.line(img, (center, center), (int(x), int(y)), color, scale)
     if path:
         cv.imwrite(Path(path).as_posix(), img)
-    return ivy.asarray(img)
+    return array_api_compat.array_namespace(img).asarray(img)

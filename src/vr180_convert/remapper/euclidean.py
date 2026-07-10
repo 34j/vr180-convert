@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import Any
 
 import attrs
-from ivy import Array
+from array_api.latest import Array
 from quaternion import quaternion, rotate_vectors
 
 from vr180_convert.remapper.base import RemapperBase
@@ -59,9 +59,7 @@ class Euclidean3DRemapper(RemapperBase):
         x, y = equidistant_from_3d(v)
         return x, y
 
-    def inverse_remap(
-        self, x: Array, y: Array, /, **kwargs: Any
-    ) -> tuple[Array, Array]:
+    def inverse_remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         v = equidistant_to_3d(x, y)
         v = self.transform_v(v)
         x, y = equidistant_from_3d(v)

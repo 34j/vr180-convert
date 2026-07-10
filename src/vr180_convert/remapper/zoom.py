@@ -1,7 +1,7 @@
 from typing import Any
 
 import attrs
-from ivy import Array
+from array_api.latest import Array
 
 from vr180_convert.remapper.base import RemapperBase
 
@@ -18,9 +18,7 @@ class ZoomRemapper(RemapperBase):
         y = y / self.scale
         return x, y
 
-    def inverse_remap(
-        self, x: Array, y: Array, /, **kwargs: Any
-    ) -> tuple[Array, Array]:
+    def inverse_remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         x = x * self.scale
         y = y * self.scale
         return x, y

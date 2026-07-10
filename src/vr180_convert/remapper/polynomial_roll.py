@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 from typing import Any
 
+import array_api_compat
 import attrs
-import ivy
-from ivy import Array
+from array_api.latest import Array
 
 from vr180_convert.remapper.polar_roll import PolarRollRemapper
 
@@ -16,14 +16,9 @@ class PolynomialScaler(PolarRollRemapper):
     """The coefficients of the polynomial in reverse order.
     [0, 1] means y = 0 + 1 * x."""
 
-    def transform_polar(
-        self, theta: Array, roll: Array, **kwargs: Any
-    ) -> tuple[Array, Array]:
-        return ivy.polyval(ivy.flip(self.coefs_reverse), theta), roll
+    def transform_polar(self, theta: Array, roll: Array, **kwargs: Any) -> tuple[Array, Array]:
+        xp = array_api_compat.array_namespace(theta, roll)
+        return xp.polyval(xp.flip(self.coefs_reverse), theta), roll
 
-    def inverse_transform_polar(
-        self, theta: Array, roll: Array, **kwargs: Any
-    ) -> tuple[Array, Array]:
-        raise NotImplementedError(
-            "PolynomialScaler does not support inverse transform."
-        )
+    def inverse_transform_polar(self, theta: Array, roll: Array, **kwargs: Any) -> tuple[Array, Array]:
+        raise NotImplementedError("PolynomialScaler does not support inverse transform.")
