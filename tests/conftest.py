@@ -1,4 +1,3 @@
-
 from typing import Any
 
 import pytest
@@ -50,4 +49,3 @@ def device(request: pytest.FixtureRequest, xp: ArrayNamespaceFull) -> Any:
 @pytest.fixture(scope="session", params=["float64"])
 def dtype(request: pytest.FixtureRequest, xp: ArrayNamespaceFull) -> str:
     return getattr(xp, request.param)
-
