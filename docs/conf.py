@@ -71,22 +71,6 @@ html_static_path = ["_static"]
 # -- Automatically run sphinx-apidoc -----------------------------------------
 
 
-def run_apidoc(_: Any) -> None:
-    """Run sphinx-apidoc."""
-    docs_path = Path(__file__).parent
-    module_path = docs_path.parent / "src" / "vr180_convert"
-
-    apidoc.main(
-        [
-            "--force",
-            "--module-first",
-            "-o",
-            docs_path.as_posix(),
-            module_path.as_posix(),
-        ]
-    )
-
-
 myst_enable_extensions = [
     "amsmath",
     # "attrs_inline",
@@ -103,6 +87,22 @@ myst_enable_extensions = [
     # "substitution",
     "tasklist",
 ]
+
+
+def run_apidoc(_: Any) -> None:
+    """Run sphinx-apidoc."""
+    docs_path = Path(__file__).parent
+    module_path = docs_path.parent / "src" / "vr180_convert"
+
+    apidoc.main(
+        [
+            "--force",
+            "--module-first",
+            "-o",
+            docs_path.as_posix(),
+            module_path.as_posix(),
+        ]
+    )
 
 
 def setup(app: Sphinx) -> None:

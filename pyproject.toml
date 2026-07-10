@@ -1,168 +1,159 @@
-[tool.poetry]
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [ "setuptools>=77.0.3" ]
+
+[project]
 name = "vr180-convert"
 version = "0.6.2"
 description = "Simple VR180 image converter"
-authors = ["34j <34j.95a2p@simplelogin.com>"]
-license = "MIT"
 readme = "README.md"
-repository = "https://github.com/34j/vr180-convert"
-documentation = "https://vr180-convert.readthedocs.io"
+license = "MIT"
+authors = [
+  { name = "34j", email = "34j.95a2p@simplelogin.com" },
+]
+requires-python = ">=3.10"
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
-    "Intended Audience :: Developers",
-    "Natural Language :: English",
-    "Operating System :: OS Independent",
-    "Topic :: Software Development :: Libraries",
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Software Development :: Libraries",
 ]
-packages = [
-    { include = "vr180_convert", from = "src" },
+dependencies = [
+  "attrs>=23.2",
+  "ivy>=1,<2",
+  "numpy>=2.2.5",
+  "numpy-quaternion>=2024,<2025",
+  "opencv-python>=4.9",
+  "rich>=10",
+  "seaborn>=0.13,<1",
+  "torch>=2.6",
+  "typer>=0.12,<1",
 ]
+urls."Bug Tracker" = "https://github.com/34j/vr180-convert/issues"
+urls.Changelog = "https://github.com/34j/vr180-convert/blob/main/CHANGELOG.md"
+urls.documentation = "https://vr180-convert.readthedocs.io"
+urls.repository = "https://github.com/34j/vr180-convert"
+scripts.vr180-convert = "vr180_convert.cli:app"
+scripts.v1c = "vr180_convert.cli:app"
 
-[tool.poetry.urls]
-"Bug Tracker" = "https://github.com/34j/vr180-convert/issues"
-"Changelog" = "https://github.com/34j/vr180-convert/blob/main/CHANGELOG.md"
-
-[tool.poetry.scripts]
-vr180-convert = "vr180_convert.cli:app"
-v1c = "vr180_convert.cli:app"
-
-[tool.poetry.dependencies]
-python = "^3.10,<3.14"
-rich = ">=10"
-typer = "^0.12.0"
-opencv-python = "^4.9.0.80"
-attrs = "^23.2.0"
-numpy-quaternion = "^2024.0.8"
-seaborn = "^0.13.2"
-ivy = "^1.0.0.4"
-torch = "^2.6.0"
-numpy = "^2.2.5"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
-pytest-cov = "^5.0.0"
-
-[tool.poetry.group.docs]
-optional = true
-
-[tool.poetry.group.docs.dependencies]
-myst-parser = { version = ">=0.16", python = ">=3.11", extras = ["linkify"] }
-sphinx = { version = ">=4.0", python = ">=3.11"}
-furo = { version = ">=2023.5.20", python = ">=3.11"}
-sphinx-autobuild = { version = ">=2024.0.0", python = ">=3.11"}
-sphinx-copybutton = "^0.5.2"
-sphinx-notfound-page = "^1.0.2"
-sphinx-last-updated-by-git = "^0.3.7"
-
-[tool.semantic_release]
-version_toml = ["pyproject.toml:tool.poetry.version"]
-version_variables = [
-    "src/vr180_convert/__init__.py:__version__",
-    "docs/conf.py:release",
+[dependency-groups]
+dev = [
+  "coverage",
+  "pytest==8.*",
+  "pytest-cov==5.*",
 ]
-build_command = "pip install poetry && poetry build"
-
-[tool.semantic_release.changelog]
-exclude_commit_patterns = [
-    "chore*",
-    "ci*",
-]
-
-[tool.semantic_release.changelog.environment]
-keep_trailing_newline = true
-
-[tool.semantic_release.branches.main]
-match = "main"
-
-[tool.semantic_release.branches.noop]
-match = "(?!main$)"
-prerelease = true
-
-[tool.pytest.ini_options]
-addopts = "-v -Wdefault --cov=vr180_convert --cov-report=term-missing:skip-covered"
-pythonpath = ["src"]
-
-[tool.coverage.run]
-branch = true
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "@overload",
-    "if TYPE_CHECKING",
-    "raise NotImplementedError",
-    'if __name__ == "__main__":',
+docs = [
+  "furo; python_version>='3.12'",
+  "myst-parser; python_version>='3.12'",
+  "sphinx==9.*; python_version>='3.12'",
+  "sphinx-autobuild; python_version>='3.12'",
 ]
 
 [tool.ruff]
 target-version = "py310"
 line-length = 110
 unsafe-fixes = true
-ignore = [
-    "D105", # Missing docstring in magic method
-    "D203", # 1 blank line required before class docstring
-    "D212", # Multi-line docstring summary should start at the first line
-    "D100", # Missing docstring in public module
-    "D104", # Missing docstring in public package
-    "D107", # Missing docstring in `__init__`
-    "D401", # First line of docstring should be in imperative mood
-    "D101",
-    "D102",
-    "D417",
+lint.select = [
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "D",   # flake8-docstrings
+  "E",   # pycodestyle
+  "F",   # pyflake
+  "I",   # isort
+  "RUF", # ruff specific
+  "S",   # flake8-bandit
+  "TID", # flake8-tidy-imports
+  "UP",  # pyupgrade
+  "W",   # pycodestyle
 ]
-select = [
-    "B",   # flake8-bugbear
-    "D",   # flake8-docstrings
-    "C4",  # flake8-comprehensions
-    "S",   # flake8-bandit
-    "F",   # pyflake
-    "E",   # pycodestyle
-    "W",   # pycodestyle
-    "UP",  # pyupgrade
-    "I",   # isort
-    "RUF", # ruff specific
-    "TID"
+lint.ignore = [
+  "D100", # Missing docstring in public module
+  "D101", # Missing docstring in public method
+  "D102", # Missing docstring in public method
+  "D104", # Missing docstring in public package
+  "D105", # Missing docstring in magic method
+  "D107", # Missing docstring in `__init__`
+  "D203", # 1 blank line required before class docstring
+  "D212", # Multi-line docstring summary should start at the first line
+  "D401", # First line of docstring should be in imperative mood
+  "D417", # Missing argument descriptions in docstrings
+]
+lint.per-file-ignores."conftest.py" = [ "D100" ]
+lint.per-file-ignores."docs/conf.py" = [ "D100" ]
+lint.per-file-ignores."setup.py" = [ "D100" ]
+lint.per-file-ignores."tests/**/*" = [
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "S101",
+]
+lint.isort.known-first-party = [ "vr180_convert", "tests" ]
+
+[tool.pyproject-fmt]
+max_supported_python = "3.14"
+
+[tool.ty]
+terminal.error-on-warning = true
+
+[tool.pytest]
+minversion = "9.0"
+addopts = [
+  "-v",
+  "-Wonce",
+  "-p no:doctest",
+  "--cov=vr180_convert",
+  "--cov-report=term",
+  "--cov-report=xml",
+]
+pythonpath = [ "src" ]
+
+[tool.coverage]
+run.branch = true
+paths.source = [
+  "src",
+  ".tox/**/site-packages",
+]
+report.exclude_lines = [
+  "@overload",
+  'if __name__ == "__main__":',
+  "if TYPE_CHECKING",
+  "pragma: no cover",
+  "raise NotImplementedError",
 ]
 
-[tool.ruff.per-file-ignores]
-"tests/**/*" = [
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "S101",
+[tool.semantic_release]
+allow_zero_version = true
+version_toml = [ "pyproject.toml:project.version" ]
+version_variables = [
+  "src/vr180_convert/__init__.py:__version__",
+  "docs/conf.py:release",
 ]
-"setup.py" = ["D100"]
-"conftest.py" = ["D100"]
-"docs/conf.py" = ["D100"]
-
-[tool.ruff.isort]
-known-first-party = ["vr180_convert", "tests"]
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_any_generics = true
-disallow_incomplete_defs = true
-disallow_untyped_defs = true
-mypy_path = "src/"
-no_implicit_optional = true
-show_error_codes = true
-warn_unreachable = true
-warn_unused_ignores = true
-exclude = [
-    'docs/.*',
-    'setup.py',
+build_command = """
+pip install uv
+uv lock
+git add uv.lock
+uv build
+"""
+branches.main.match = "main"
+branches.noop.match = "(?!main$)"
+branches.noop.prerelease = true
+changelog.exclude_commit_patterns = [
+  "chore(?:\\([^)]*?\\))?: .+",
+  "ci(?:\\([^)]*?\\))?: .+",
+  "refactor(?:\\([^)]*?\\))?: .+",
+  "style(?:\\([^)]*?\\))?: .+",
+  "test(?:\\([^)]*?\\))?: .+",
+  "build\\((?!deps\\): .+)",
+  "Merged? .*",
+  "Initial [Cc]ommit.*",         # codespell:ignore
 ]
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-allow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = "docs.*"
-ignore_errors = true
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+changelog.environment.keep_trailing_newline = true
