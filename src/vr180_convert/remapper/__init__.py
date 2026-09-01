@@ -1,7 +1,6 @@
 """Remapper classes for vr180-convert."""
 
 from vr180_convert.remapper.base import MultiRemapper, RemapperBase, UnfitError
-from vr180_convert.remapper.decoder import RectilinearDecoder
 from vr180_convert.remapper.denormalize import DenormalizeRemapper
 from vr180_convert.remapper.equidistant import (
     EquirectangularDecoder,
@@ -17,6 +16,7 @@ from vr180_convert.remapper.normalize import NormalizeRemapper
 from vr180_convert.remapper.polar_roll import PolarRollRemapper
 from vr180_convert.remapper.polynomial_roll import PolynomialScaler
 from vr180_convert.remapper.radius import AutoDenormalizeRemapper
+from vr180_convert.remapper.rectilinear import RectilinearDecoder, RectilinearEncoder
 from vr180_convert.remapper.rotation_match import (
     PerEyeRotator,
     RotationMatchRemapper,
@@ -43,6 +43,7 @@ __all__ = [
     "PolarRollRemapper",
     "PolynomialScaler",
     "RectilinearDecoder",
+    "RectilinearEncoder",
     "RemapperBase",
     "RemapperTransformer",
     "RotationMatchRemapper",
