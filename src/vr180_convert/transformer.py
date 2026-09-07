@@ -418,7 +418,7 @@ class InverseTransformer(TransformerBase, Generic[T]):
 def FisheyeDecoder(
     mapping_type: Literal[
         "rectilinear", "stereographic", "equidistant", "equisolid", "orthographic"
-    ]
+    ],
 ) -> InverseTransformer[FisheyeEncoder]:
     """
     Decodes fisheye image.
