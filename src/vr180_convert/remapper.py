@@ -325,7 +325,7 @@ def apply(
     transformer: TransformerBase,
     *,
     in_paths: Sequence[Path | str | NDArray] | Path | str | NDArray,
-    out_paths: Sequence[Path | str] | None | Path | str = None,
+    out_paths: Sequence[Path | str] | Path | str | None = None,
     size_output: tuple[int, int] = (2048, 2048),
     interpolation: int = cv.INTER_LANCZOS4,
     boarder_mode: int = cv.BORDER_CONSTANT,
