@@ -52,16 +52,17 @@ def _init_logging(verbose: bool) -> None:
     )
 
 
-def _parse_size(s: str) -> tuple[int, int]:
+def _parse_size_from_str(s: str, /) -> tuple[int, int]:
+    """WxH -> (W, H)."""
     a, b = s.split("x")
     return int(a), int(b)
 
 
-def _resolve_radius(opt: str, left_path: Path, right_path: Path) -> float | str:
-    if opt in ("auto", "max"):
+def _resolve_radius(option: Literal["auto", "max"] | str, /, *, left_path: Path, right_path: Path) -> float:
+    if option in ("auto", "max"):
         images = [cv.imread(str(left_path)), cv.imread(str(right_path))]
-        return _get_radius_smart(opt, np.stack(images))
-    return float(opt)
+        return _get_radius_smart(option, np.stack(images))
+    return float(option)
 
 
 def _pipeline(
@@ -127,16 +128,18 @@ def _compute_per_eye_rotation(
     return childl, childr
 
 
-def _output_path(left: Path, right: Path, out: Path, unique: bool, tag: str = "") -> Path:
-    name = f"{left.stem}-{right.stem}"
-    if unique:
+def _output_path(
+    *, left_path: Path, right_path: Path, out_path: Path, add_unique_suffix: bool, tag: str = ""
+) -> Path:
+    name = f"{left_path.stem}-{right_path.stem}"
+    if add_unique_suffix:
         name = f"{name}-{sha256(tag.encode()).hexdigest()[:8]}"
     filename = f"{name}.{DEFAULT_EXTENSION}"
-    if out == Path(""):
-        return left.parent / filename
-    if out.is_dir():
-        return out / filename
-    return out
+    if out_path == Path(""):
+        return left_path.parent / filename
+    if out_path.is_dir():
+        return out_path / filename
+    return out_path
 
 
 app = App(help_format="markdown")
@@ -150,7 +153,7 @@ def lr(
     *,
     verbose: bool = False,
     size: str = "4096x4096",
-    radius: str = "auto",
+    radius: Literal["auto", "max"] | str = "auto",
     swap: bool = False,
     automatch: str = "",
     mapping_type: str = "equidistant",
@@ -158,8 +161,8 @@ def lr(
     merge: bool = False,
     savematch: bool = False,
     time_search: Path | None = None,
-    time_calib: float = 0.0,
-    unique: bool = False,
+    seconds_to_subtract_from_right_images: float = 0.0,
+    add_unique_suffix: bool = False,
 ) -> None:
     """
     Remap a pair of fisheye images to a side-by-side equirectangular VR180 image.
@@ -174,7 +177,8 @@ def lr(
     right_path
         Right fisheye image path.
     out_path
-        Output image path. If a directory, the output filename is auto-generated.
+        Output image path.
+        If a directory, the output filename is auto-generated.
     verbose
         Enable verbose logging.
     size
@@ -201,82 +205,51 @@ def lr(
         Save the feature match visualization (only with ``automatch=fm``).
     time_search
         Search a directory for the time-matched partner of the given image.
-    time_calib
-        Right-camera time offset in seconds (``right_time -= time_calib``).
-    unique
+    seconds_to_subtract_from_right_images
+        Time offset (in seconds) to subtract from the right image timestamps when searching for a match.
+    add_unique_suffix
         Append a unique hash to the output filename.
 
     """
     _init_logging(verbose)
     if swap:
         left_path, right_path = right_path, left_path
-        time_calib = -time_calib
-
-    # Handle same-path (SBS image split)
-    if left_path == right_path:
-        LOG.info("Same path provided, splitting image into left/right halves")
-        sbs_img = cv.imread(str(left_path))
-        mid = sbs_img.shape[1] // 2
-        left_np = sbs_img[:, :mid, :]
-        right_np = sbs_img[:, mid:, :]
-        size_out = _parse_size(size)
-        radius_val = _resolve_radius(radius, left_path, right_path)
-        # Build pipeline for same-path case
-        remappers: list[RemapperBase]
-        if transformer:
-            remappers = _eval_transformer(transformer)
-        else:
-            pipes: list[RemapperBase] = [
-                AutoDenormalizeRemapper(strategy=radius_val),
-                FisheyeDecoder(mapping_type),
-            ]
-            if automatch and automatch.startswith("fm"):
-                pipes.append(RotationMatchRemapper())
-            elif automatch and automatch not in ("", "fm"):
-                # GUI or manual points: compute rotation and insert PerEyeRotator
-                _handle_manual_automatch(automatch, pipes, left_np, right_np, radius_val)
-            pipes += [EquirectangularEncoder(), NormalizeRemapper()]
-            remappers = pipes
-        transformer_obj = RemapperTransformer(remappers=remappers, size_output=size_out) * Concater()
-        xp = array_api_compat.array_namespace(np.asarray(left_np))
-        img = xp.stack([xp.asarray(left_np), xp.asarray(right_np)], axis=0)
-        result = transformer_obj.transform(img)
-        out = _output_path(left_path, right_path, out_path, unique, tag=str(remappers))
-        cv.imwrite(str(out), np.asarray(result))
-        LOG.info("Saved -> %s", out)
-        return
+        seconds_to_subtract_from_right_images = -seconds_to_subtract_from_right_images
 
     if time_search is not None:
-        right_path = find_time_matched_image(left_path, time_search, search_path_earlier_diff=time_calib)
+        right_path = find_time_matched_image(
+            left_path, time_search, search_path_earlier_diff=seconds_to_subtract_from_right_images
+        )
     elif left_path.is_dir() or right_path.is_dir():
         if left_path.is_dir() and not right_path.is_dir():
-            left_path = find_time_matched_image(right_path, left_path, search_path_earlier_diff=time_calib)
+            left_path = find_time_matched_image(
+                right_path, left_path, search_path_earlier_diff=seconds_to_subtract_from_right_images
+            )
         elif right_path.is_dir() and not left_path.is_dir():
-            right_path = find_time_matched_image(left_path, right_path, search_path_earlier_diff=time_calib)
+            right_path = find_time_matched_image(
+                left_path, right_path, search_path_earlier_diff=seconds_to_subtract_from_right_images
+            )
         else:
             raise ValueError("Both paths cannot be directories")
 
     LOG.info("L: %s, R: %s", left_path, right_path)
-    size_out = _parse_size(size)
+    size_out = _parse_size_from_str(size)
 
-    img_l_np = cv.imread(str(left_path))
-    img_r_np = cv.imread(str(right_path))
+    img_l_np = cv.imread(left_path.as_posix())
+    img_r_np = cv.imread(right_path.as_posix())
     radius_val = _resolve_radius(radius, left_path, right_path)
 
-    if transformer:
-        remappers = _eval_transformer(transformer)
-    else:
-        remappers = _pipeline(radius_val, size_out, automatch=automatch, mapping_type=mapping_type)
-        if automatch and not automatch.startswith("fm"):
-            # GUI or manual points: need to handle after building pipeline
-            # Remove the placeholder PerEyeRotator (if any) and compute from points
-            pipes: list[RemapperBase] = [
-                AutoDenormalizeRemapper(strategy=radius_val),
-                FisheyeDecoder(mapping_type),
-            ]
-            _handle_manual_automatch(automatch, pipes, img_l_np, img_r_np, radius_val)
-            pipes += [EquirectangularEncoder(), NormalizeRemapper()]
-            remappers = pipes
+    remappers = _pipeline(radius_val, size_out, automatch=automatch, mapping_type=mapping_type)
+    if automatch and not automatch.startswith("fm"):
+        # GUI or manual points: need to handle after building pipeline
+        # Remove the placeholder PerEyeRotator (if any) and compute from points
+        pipes: list[RemapperBase] = [
+            AutoDenormalizeRemapper(strategy=radius_val),
+            FisheyeDecoder(mapping_type),
+        ]
+        _handle_manual_automatch(automatch, pipes, img_l_np, img_r_np, radius_val)
+        pipes += [EquirectangularEncoder(), NormalizeRemapper()]
+        remappers = pipes
 
     transformer_obj = RemapperTransformer(remappers=remappers, size_output=size_out) * (
         Merger() if merge else Concater()
@@ -286,80 +259,13 @@ def lr(
     img = xp.stack([xp.asarray(img_l_np), xp.asarray(img_r_np)], axis=0)
     result = transformer_obj.transform(img)
 
-    out = _output_path(left_path, right_path, out_path, unique, tag=str(remappers))
+    out = _output_path(left_path, right_path, out_path, add_unique_suffix, tag=str(remappers))
     cv.imwrite(str(out), np.asarray(result))
     LOG.info("Saved -> %s", out)
 
     # Save match visualization if requested
     if savematch and automatch.startswith("fm"):
         _save_match_image(remappers, left_path, right_path, out)
-
-
-@app.command
-def s(
-    in_paths: list[Path],
-    out_path: Path = Path(""),
-    *,
-    verbose: bool = False,
-    size: str = "4096x4096",
-    radius: str = "auto",
-    mapping_type: str = "equidistant",
-    transformer: str = "",
-) -> None:
-    """
-    Remap single fisheye images to equirectangular format.
-
-    Parameters
-    ----------
-    in_paths
-        One or more input image paths.
-    out_path
-        Output path or directory. If a directory, each input keeps its name.
-    verbose
-        Enable verbose logging.
-    size
-        Output size as WxH, e.g. ``4096x4096``.
-    radius
-        Fisheye radius: ``"auto"``, ``"max"``, or a pixel value.
-    mapping_type
-        Fisheye projection model: ``"rectilinear"``, ``"stereographic"``,
-        ``"equidistant"``, ``"equisolid"``, or ``"orthographic"``.
-    transformer
-        Custom transformer Python expression (eval'd). Overrides the default pipeline.
-
-    """
-    _init_logging(verbose)
-    size_out = _parse_size(size)
-
-    if out_path == Path(""):
-        out_paths = [p.with_suffix(f".out.{DEFAULT_EXTENSION}") for p in in_paths]
-    elif out_path.is_dir():
-        out_paths = [out_path / p.name for p in in_paths]
-    else:
-        if len(in_paths) > 1:
-            raise ValueError("Multiple inputs require a directory output path")
-        out_paths = [out_path]
-
-    for in_path, out in zip(in_paths, out_paths, strict=True):
-        img_np = cv.imread(str(in_path))
-        xp = array_api_compat.array_namespace(img_np)
-        rv = _get_radius_smart(
-            radius if radius in ("auto", "max") else float(radius),
-            [img_np],
-        )
-        if transformer:
-            remappers = _eval_transformer(transformer)
-        else:
-            remappers: list[RemapperBase] = [
-                AutoDenormalizeRemapper(strategy=rv),
-                FisheyeDecoder(mapping_type),
-                EquirectangularEncoder(),
-                NormalizeRemapper(),
-            ]
-        transformer_obj = RemapperTransformer(remappers=remappers, size_output=size_out)
-        result = transformer_obj.transform(xp.asarray(img_np))
-        cv.imwrite(str(out), np.asarray(result))
-        LOG.info("Saved %s -> %s", in_path, out)
 
 
 @app.command
@@ -390,26 +296,6 @@ def swap(
         out = in_path if overwrite else in_path.with_suffix(f".swap{in_path.suffix}")
         cv.imwrite(str(out), swapped)
         LOG.info("Swapped %s -> %s", in_path, out)
-
-
-def _eval_transformer(expr: str) -> list[RemapperBase]:
-    """Evaluate a transformer expression and return a list of remappers."""
-    import numpy as np  # noqa: F401 - needed for eval
-    from quaternion import from_rotation_vector  # noqa: F401 - needed for eval
-
-    from vr180_convert.remapper import (
-        EquirectangularEncoder,  # noqa: F401 - needed for eval
-        Euclidean3DRotator,  # noqa: F401 - needed for eval
-        FisheyeDecoder,  # noqa: F401 - needed for eval
-        PolarRollRemapper,  # noqa: F401 - needed for eval
-    )
-
-    result = eval(expr)  # noqa: S307
-    if isinstance(result, RemapperBase):
-        return [result]
-    if isinstance(result, (list, tuple)):
-        return list(result)
-    raise ValueError(f"Invalid transformer expression: {expr!r}")
 
 
 def _handle_manual_automatch(
@@ -444,6 +330,8 @@ def _handle_manual_automatch(
 
 def _save_match_image(
     remappers: list[RemapperBase],
+    /,
+    *,
     left_path: Path,
     right_path: Path,
     out_path: Path,
