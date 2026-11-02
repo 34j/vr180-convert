@@ -58,7 +58,7 @@ def test_apply(
         "equisolid",
         "orthographic",
         "equirectangular",
-    ]
+    ],
 ) -> None:
     encoder = (
         FisheyeEncoder(format)
