@@ -48,7 +48,7 @@ scripts.vr180-convert = "vr180_convert.cli:app"
 dev = [
   "coverage",
   "pytest==8.*",
-  "pytest-cov==5.*",
+  "pytest-cov==7.*",
   "pytest-xdist>=3.8",
   "sybil>=10.1",
   "ty",
