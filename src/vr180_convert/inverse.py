@@ -1,4 +1,4 @@
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 import attrs
 from array_api.latest import Array
@@ -9,7 +9,7 @@ T = TypeVar("T", bound=TransformerBase)
 
 
 @attrs.define()
-class InverseTransformer(TransformerBase, Generic[T]):
+class InverseTransformer[T: TransformerBase](TransformerBase):
     """Remapper that calls inverse_transform() in transform() and vice versa."""
 
     transformer: T
