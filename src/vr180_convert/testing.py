@@ -3,14 +3,13 @@ from __future__ import annotations
 from colorsys import hls_to_rgb
 from pathlib import Path
 
+import array_api_compat
 import cv2 as cv
 import numpy as np
-from numpy.typing import NDArray
+from array_api.latest import Array
 
 
-def generate_test_image(
-    size: int = 2048, path: str | Path | None = None
-) -> NDArray[np.uint8]:
+def generate_test_image(size: int = 2048, path: str | Path | None = None) -> Array:
     """
     Generate a test image.
 
@@ -24,7 +23,7 @@ def generate_test_image(
 
     Returns
     -------
-    NDArray[np.uint8]
+    Array
         The generated image.
 
     """
@@ -58,4 +57,4 @@ def generate_test_image(
         cv.line(img, (center, center), (int(x), int(y)), color, scale)
     if path:
         cv.imwrite(Path(path).as_posix(), img)
-    return img
+    return array_api_compat.array_namespace(img).asarray(img)

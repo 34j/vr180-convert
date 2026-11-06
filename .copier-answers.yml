@@ -1,7 +1,6 @@
 # Changes here will be overwritten by Copier
-_commit: cf81ff6
+_commit: a3d26ee
 _src_path: gh:34j/pypackage-template
-add_me_as_contributor: false
 cli_name: vr180-convert
 copyright_year: '2024'
 documentation: true
@@ -10,15 +9,14 @@ full_name: 34j
 github_username: 34j
 has_cli: true
 initial_commit: false
+is_django_package: false
 open_source_license: MIT
-open_with_vscode: false
+open_with_editor: false
 package_name: vr180_convert
 project_name: VR180 image converter
 project_short_description: Simple VR180 image converter
 project_slug: vr180-convert
-run_poetry_install: false
+run_uv_sync: true
 setup_github: false
 setup_pre_commit: false
-setup_venv: false
-venv_version: '3.11'
 

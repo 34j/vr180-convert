@@ -14,11 +14,9 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.x
-      - uses: pre-commit/action@v3.0.1
+      - uses: actions/checkout@v6.0.2
+      - uses: astral-sh/setup-uv@v8.1.0
+      - uses: j178/prek-action@v2.0.3
 
   # Make sure commit messages follow the conventional commits convention:
   # https://www.conventionalcommits.org
@@ -26,46 +24,36 @@ jobs:
     name: Lint Commit Messages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
-      - uses: wagoid/commitlint-github-action@v5.5.1
+      - uses: wagoid/commitlint-github-action@v6.2.1
 
   test:
     strategy:
       fail-fast: false
       matrix:
         python-version:
-          - "3.8"
-          - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"
+          - "3.13"
+          - "3.14"
         os:
           - ubuntu-latest
           - windows-latest
           - macOS-latest
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Install poetry
-        run: pipx install poetry
-      # https://github.com/actions/setup-python/blob/main/docs/advanced-usage.md#caching-packages
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        id: setup-python
+      - uses: actions/checkout@v6.0.2
+      - uses: astral-sh/setup-uv@v8.1.0
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-      - run: echo "Cache hit:${{ steps.setup-python.outputs.cache-hit }}" # true if cache-hit occurred on the primary key
-      - name: Install Dependencies
-        run: poetry install
+      - run: uv sync --no-python-downloads
         shell: bash
-      - name: Test with Pytest
-        run: poetry run pytest --cov-report=xml
+      - run: uv run pytest
         shell: bash
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -80,35 +68,48 @@ jobs:
     concurrency: release
     permissions:
       id-token: write
+      attestations: write
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref || github.ref_name }}
+          ref: ${{ github.sha }}
+
+      - name: Checkout commit for release
+        run: |
+          git checkout -B ${{ github.ref_name }} ${{ github.sha }}
 
       # Do a dry run of PSR
       - name: Test release
-        uses: python-semantic-release/python-semantic-release@v9.8.1
+        uses: python-semantic-release/python-semantic-release@v10.5.3
         if: github.ref_name != 'main'
         with:
-          root_options: --noop
+          no_operation_mode: true
+          github_token: noop
 
       # On main branch: actual PSR + upload to PyPI & GitHub
       - name: Release
-        uses: python-semantic-release/python-semantic-release@v9.8.1
-        id: release
+        uses: python-semantic-release/python-semantic-release@v10.5.3
         if: github.ref_name == 'main'
+        id: release
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Attest build provenance
+        uses: actions/attest@v4
+        if: steps.release.outputs.released == 'true'
+        with:
+          subject-path: "dist/*"
+
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@v1.14.0
         if: steps.release.outputs.released == 'true'
 
       - name: Publish package distributions to GitHub Releases
-        uses: python-semantic-release/upload-to-gh-release@main
+        uses: python-semantic-release/publish-action@v10.5.3
         if: steps.release.outputs.released == 'true'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.release.outputs.tag }}

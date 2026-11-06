@@ -12,14 +12,14 @@
   </a>
 </p>
 <p align="center">
-  <a href="https://python-poetry.org/">
-    <img src="https://img.shields.io/badge/packaging-poetry-299bd7?style=flat-square&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAASCAYAAABrXO8xAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAJJSURBVHgBfZLPa1NBEMe/s7tNXoxW1KJQKaUHkXhQvHgW6UHQQ09CBS/6V3hKc/AP8CqCrUcpmop3Cx48eDB4yEECjVQrlZb80CRN8t6OM/teagVxYZi38+Yz853dJbzoMV3MM8cJUcLMSUKIE8AzQ2PieZzFxEJOHMOgMQQ+dUgSAckNXhapU/NMhDSWLs1B24A8sO1xrN4NECkcAC9ASkiIJc6k5TRiUDPhnyMMdhKc+Zx19l6SgyeW76BEONY9exVQMzKExGKwwPsCzza7KGSSWRWEQhyEaDXp6ZHEr416ygbiKYOd7TEWvvcQIeusHYMJGhTwF9y7sGnSwaWyFAiyoxzqW0PM/RjghPxF2pWReAowTEXnDh0xgcLs8l2YQmOrj3N7ByiqEoH0cARs4u78WgAVkoEDIDoOi3AkcLOHU60RIg5wC4ZuTC7FaHKQm8Hq1fQuSOBvX/sodmNJSB5geaF5CPIkUeecdMxieoRO5jz9bheL6/tXjrwCyX/UYBUcjCaWHljx1xiX6z9xEjkYAzbGVnB8pvLmyXm9ep+W8CmsSHQQY77Zx1zboxAV0w7ybMhQmfqdmmw3nEp1I0Z+FGO6M8LZdoyZnuzzBdjISicKRnpxzI9fPb+0oYXsNdyi+d3h9bm9MWYHFtPeIZfLwzmFDKy1ai3p+PDls1Llz4yyFpferxjnyjJDSEy9CaCx5m2cJPerq6Xm34eTrZt3PqxYO1XOwDYZrFlH1fWnpU38Y9HRze3lj0vOujZcXKuuXm3jP+s3KbZVra7y2EAAAAAASUVORK5CYII=" alt="Poetry">
+  <a href="https://github.com/astral-sh/uv">
+    <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="uv">
   </a>
-  <a href="https://github.com/ambv/black">
-    <img src="https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square" alt="black">
+  <a href="https://github.com/astral-sh/ruff">
+    <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Ruff">
   </a>
-  <a href="https://github.com/pre-commit/pre-commit">
-    <img src="https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white&style=flat-square" alt="pre-commit">
+  <a href="https://github.com/j178/prek">
+    <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/j178/prek/master/docs/assets/badge-v0.json" alt="prek">
   </a>
 </p>
 <p align="center">
@@ -74,11 +74,11 @@ v1c lr left_dir right.jpg
 ```
 
 Since clocks on cameras may not be very accurate in some cases, it is recommended to check how quickly the clocks of the two cameras shift, and synchronize the clocks before shooting.
-However, it can be adjusted by specifying `-ac` option.
+However, it can be adjusted by specifying `--time-calib` option.
 
 ```shell
-v1c lr left.jpg right_dir -ac 1 # the clock of the right camera is 1 second faster / ahead
-v1c lr left_dir right.jpg -ac 1 # the clock of the right camera is 1 second faster / ahead
+v1c lr left.jpg right_dir --time-calib 1 # the clock of the right camera is 1 second faster / ahead
+v1c lr left_dir right.jpg --time-calib 1 # the clock of the right camera is 1 second faster / ahead
 ```
 
 ### Radius estimation
@@ -150,23 +150,16 @@ v1c swap rl.jpg
 
 in case one notices that the left and right images are swapped after the conversion.
 
-### Convert to Google's format (Photo Sphere XMP Metadata)
+### Saving match visualization
 
-This format is special in that it base64-encodes the right-eye image into the metadata of the left-eye image.
-Required for Google Photos, etc.
-
-You can convert the image to this format by:
+When using `--automatch fm`, the match visualization can be saved by specifying `--savematch`.
+The match image is saved alongside the output with a `.match` suffix.
 
 ```shell
-v1c xmp lr.jpg
+v1c lr left.jpg right.jpg --automatch fm --savematch
 ```
 
-The [python-xmp-toolkit](https://github.com/python-xmp-toolkit/python-xmp-toolkit) used in this command requires [exempi](https://libopenraw.freedesktop.org/exempi/) to be installed. Note that if this command is called on Windows, it will attempt to install this library and its dependencies and then run the command on WSL using `subprocess`.
 
-#### References
-
-- [imrivera/google\-photos\-vr180\-test: Test for XMP metadata parsing for VR180 pictures in Google Photos](https://github.com/imrivera/google-photos-vr180-test)
-- [temoki/make_vr180photo_py: 左眼カメラ画像と右眼カメラ画像を結合して VR180 3D フォトを作成する Python スクリプト](https://github.com/temoki/make_vr180photo_py)
 
 ### Custom conversion model
 
@@ -176,8 +169,7 @@ You can also specify the conversion model by adding Python code directly to the 
 v1c lr left.jpg right.jpg --transformer 'EquirectangularEncoder() * Euclidean3DRotator(from_rotation_vector([0, np.pi / 4, 0])) * FisheyeDecoder("equidistant")'
 ```
 
-If tuple, the first transformer is applied to the left image and the second transformer is applied to the right image. If a single transformer is given, it is applied to both images.
-
+The expression is evaluated and used as the remapper chain, overriding the default pipeline.
 Please refer to the [API documentation](https://vr180-convert.readthedocs.io/) for the available transformers and their parameters.
 For `from_rotation_vector`, please refer to the [numpy-quaternion documentation](https://quaternion.readthedocs.io/en/latest/Package%20API%3A/quaternion/#from_rotation_vector).
 
@@ -188,7 +180,7 @@ To convert a single image, use `v1c s` instead.
 ### Running commands for all images in a directory
 
 ```shell
-find left_dir -type f -name '*.jpg' -exec v1c lr {} right_dir --automatch fm --radius max -ac 0 --out-path out \;
+find left_dir -type f -name '*.jpg' -exec v1c lr {} right_dir --automatch fm --radius max --time-calib 0 --out-path out \;
 ```
 
 ### Help
@@ -201,21 +193,27 @@ v1c --help
 
 ## Usage as a library
 
-For more complex transformations, it is recommended to create your own `Transformer`.
+For more complex transformations, it is recommended to create your own `Remapper`.
 
 Note that the transformation is applied in inverse order (new[(x, y)] = old[transform(x, y)], e.g. to decode [orthographic](https://en.wikipedia.org/wiki/Fisheye_lens#Mapping_function) fisheye images, `transform_polar` should be `arcsin(theta)`, not `sin(theta)`.)
 
 ```python
-from vr180_convert import PolarRollTransformer, apply_lr
+from typing import Any
 
-class MyTransformer(PolarRollTransformer):
+from array_api.latest import Array
+from vr180_convert.remapper.polar_roll import PolarRollRemapper
+from vr180_convert.remapper.equidistant import EquirectangularEncoder
+from vr180_convert.remapper.fisheye import FisheyeDecoder
+
+
+class MyRemapper(PolarRollRemapper):
     def transform_polar(
-        self, theta: NDArray, roll: NDArray, **kwargs: Any
-    ) -> tuple[NDArray, NDArray]:
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         return theta**0.98 + theta**1.01, roll
 
-transformer = EquirectangularEncoder() * MyTransformer() * FisheyeDecoder("equidistant")
-apply_lr(transformer, left_path="left.jpg", right_path="right.jpg", out_path="output.jpg")
+
+transformer = EquirectangularEncoder() * MyRemapper() * FisheyeDecoder("equidistant")
 ```
 
 ## Tips
@@ -287,6 +285,8 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
 
 ## Credits
+
+[![Copier](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-grayscale-inverted-border-orange.json)](https://github.com/copier-org/copier)
 
 This package was created with
 [Copier](https://copier.readthedocs.io/) and the
