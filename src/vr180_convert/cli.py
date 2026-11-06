@@ -237,7 +237,7 @@ def lr(
 
     img_l_np = cv.imread(left_path.as_posix())
     img_r_np = cv.imread(right_path.as_posix())
-    radius_val = _resolve_radius(radius, left_path, right_path)
+    radius_val = _resolve_radius(radius, left_path=left_path, right_path=right_path)
 
     remappers = _pipeline(radius_val, size_out, automatch=automatch, mapping_type=mapping_type)
     if automatch and not automatch.startswith("fm"):
@@ -259,7 +259,13 @@ def lr(
     img = xp.stack([xp.asarray(img_l_np), xp.asarray(img_r_np)], axis=0)
     result = transformer_obj.transform(img)
 
-    out = _output_path(left_path, right_path, out_path, add_unique_suffix, tag=str(remappers))
+    out = _output_path(
+        left_path=left_path,
+        right_path=right_path,
+        out_path=out_path,
+        add_unique_suffix=add_unique_suffix,
+        tag=str(remappers),
+    )
     cv.imwrite(str(out), np.asarray(result))
     LOG.info("Saved -> %s", out)
 
