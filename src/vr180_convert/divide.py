@@ -22,7 +22,7 @@ class Divider(TransformerBase):
                 ),
                 axis=-4,
             )
-        elif self.direction == "vertical":
+        if self.direction == "vertical":
             return xp.stack(
                 (
                     image[..., : image.shape[-2] // 2, :, :],
@@ -30,6 +30,7 @@ class Divider(TransformerBase):
                 ),
                 axis=-4,
             )
+        return None
 
     def inverse_transform(self, image: Array, /, **kwargs: Any) -> Array:
         xp = array_api_compat.array_namespace(image)

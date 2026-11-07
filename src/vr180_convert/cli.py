@@ -58,8 +58,10 @@ def _parse_size_from_str(s: str, /) -> tuple[int, int]:
     return int(a), int(b)
 
 
-def _resolve_radius(option: Literal["auto", "max"] | str, /, *, left_path: Path, right_path: Path) -> float:
-    if option in ("auto", "max"):
+def _resolve_radius(
+    option: Literal["auto", "max"] | str, /, *, left_path: Path, right_path: Path
+) -> float:
+    if option in {"auto", "max"}:
         images = [cv.imread(str(left_path)), cv.imread(str(right_path))]
         return _get_radius_smart(option, np.stack(images))
     return float(option)
@@ -135,7 +137,7 @@ def _output_path(
     if add_unique_suffix:
         name = f"{name}-{sha256(tag.encode()).hexdigest()[:8]}"
     filename = f"{name}.{DEFAULT_EXTENSION}"
-    if out_path == Path(""):
+    if out_path == Path():
         return left_path.parent / filename
     if out_path.is_dir():
         return out_path / filename
@@ -149,7 +151,7 @@ app = App(help_format="markdown")
 def lr(
     left_path: Path,
     right_path: Path,
-    out_path: Path = Path(""),
+    out_path: Path = Path(),
     *,
     verbose: bool = False,
     size: str = "4096x4096",
@@ -206,7 +208,8 @@ def lr(
     time_search
         Search a directory for the time-matched partner of the given image.
     seconds_to_subtract_from_right_images
-        Time offset (in seconds) to subtract from the right image timestamps when searching for a match.
+        Time offset (in seconds) to subtract from the right image timestamps when searching for a
+        match.
     add_unique_suffix
         Append a unique hash to the output filename.
 
@@ -223,11 +226,15 @@ def lr(
     elif left_path.is_dir() or right_path.is_dir():
         if left_path.is_dir() and not right_path.is_dir():
             left_path = find_time_matched_image(
-                right_path, left_path, search_path_earlier_diff=seconds_to_subtract_from_right_images
+                right_path,
+                left_path,
+                search_path_earlier_diff=seconds_to_subtract_from_right_images,
             )
         elif right_path.is_dir() and not left_path.is_dir():
             right_path = find_time_matched_image(
-                left_path, right_path, search_path_earlier_diff=seconds_to_subtract_from_right_images
+                left_path,
+                right_path,
+                search_path_earlier_diff=seconds_to_subtract_from_right_images,
             )
         else:
             raise ValueError("Both paths cannot be directories")

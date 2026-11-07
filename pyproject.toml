@@ -57,46 +57,34 @@ docs = [
 ]
 
 [tool.ruff]
-target-version = "py312"
-line-length = 110
-unsafe-fixes = true
-lint.select = [
-  "B",   # flake8-bugbear
-  "C4",  # flake8-comprehensions
-  "D",   # flake8-docstrings
-  "E",   # pycodestyle
-  "F",   # pyflakes
-  "I",   # isort
-  "RUF", # ruff specific
-  "S",   # flake8-bandit
-  "TID", # flake8-tidy-imports
-  "UP",  # pyupgrade
-  "W",   # pycodestyle
+extend = ".venv/ruff.toml"
+lint.extend-ignore = [
+  "A002",    # Built-in names are part of the public CLI/API vocabulary.
+  "ARG001",  # Callback arguments are required by the framework.
+  "ARG002",  # Remapper hooks implement a shared kwargs-based protocol.
+  "BLE001",  # Test fixtures intentionally probe backend availability.
+  "D101",    # Public classes are documented where their behavior needs explanation.
+  "D102",    # Protocol overrides do not need duplicate docstrings.
+  "D105",    # Magic methods are self-explanatory in these value objects.
+  "D401",    # Existing project prose is intentionally descriptive.
+  "D417",    # Existing NumPy-style docs omit repetitive argument descriptions.
+  "DOC201",  # Return sections are excessive for short transformation methods.
+  "DOC501",  # ValueError messages document these small validation branches.
+  "FBT001",  # Boolean CLI options are intentionally positional in callbacks.
+  "FBT002",  # Boolean CLI defaults are part of the command interface.
+  "FBT003",  # NumPy constructor flags are clearer as positional arguments here.
+  "N802",    # Capitalized factory names are established public API.
+  "N806",    # Matrix names follow the mathematical notation in the docs.
+  "N812",    # F is the conventional torch functional alias.
+  "NPY002",  # Tests do not depend on cryptographic-quality randomness.
+  "PGH003",  # Third-party typing stubs do not expose the runtime color types.
+  "PLC0415", # Backend-specific imports must remain lazy.
+  "PLR6104", # In-place array updates could mutate caller-owned coordinate arrays.
+  "PLR6301", # Methods are intentionally grouped with their remapper classes.
+  "PYI051",  # Literal unions preserve the accepted CLI value documentation.
+  "S404",    # Subprocess is used only with a fixed local Python module command.
+  "S603",    # The subprocess command has no user-controlled arguments.
 ]
-lint.ignore = [
-  "D100", # Missing docstring in public module
-  "D101", # Missing docstring in public class
-  "D102", # Missing docstring in public method
-  "D104", # Missing docstring in public package
-  "D105", # Missing docstring in magic method
-  "D107", # Missing docstring in __init__
-  "D203", # 1 blank line required before class docstring
-  "D212", # Multi-line docstring summary should start at the first line
-  "D401", # First line of docstring should be in imperative mood
-  "D417", # Missing argument descriptions in docstring
-]
-lint.per-file-ignores."conftest.py" = [ "D100" ]
-lint.per-file-ignores."docs/conf.py" = [ "D100" ]
-lint.per-file-ignores."tests/**/*" = [
-  "D100",
-  "D101",
-  "D102",
-  "D103",
-  "D104",
-  "S101",
-  "S603",
-]
-lint.isort.known-first-party = [ "vr180_convert", "tests" ]
 
 [tool.pyproject-fmt]
 max_supported_python = "3.14"

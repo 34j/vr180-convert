@@ -11,7 +11,7 @@ class DenormalizeRemapper(RemapperBase):
     """Denormalize the coordinates from [-1, 1] to the original image size."""
 
     scale: tuple[float, float]
-    """The scale of the image. Recommended to be the half of the width and height of the result image."""
+    """The scale of the image, recommended as half the result width and height."""
     center: tuple[float, float]
     """The center of the image. Recommended to be the center of the result image."""
 

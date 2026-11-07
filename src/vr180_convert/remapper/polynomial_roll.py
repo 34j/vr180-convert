@@ -20,5 +20,7 @@ class PolynomialScaler(PolarRollRemapper):
         xp = array_api_compat.array_namespace(theta, roll)
         return xp.polyval(xp.flip(self.coefs_reverse), theta), roll
 
-    def inverse_transform_polar(self, theta: Array, roll: Array, **kwargs: Any) -> tuple[Array, Array]:
+    def inverse_transform_polar(
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         raise NotImplementedError("PolynomialScaler does not support inverse transform.")

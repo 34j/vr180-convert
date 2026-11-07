@@ -16,4 +16,6 @@ def test_rotation_match(rotation: quaternion) -> None:
     random_points = np.random.normal(size=(100, 3))
     random_points_rotated = rotate_vectors(rotation, random_points)
     rotation_est = rotation_match(random_points, random_points_rotated)
-    assert allclose(rotation, rotation_est, atol=1e-3) or allclose(-rotation, rotation_est, atol=1e-3)
+    assert allclose(rotation, rotation_est, atol=1e-3) or allclose(
+        -rotation, rotation_est, atol=1e-3
+    )

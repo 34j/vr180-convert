@@ -32,10 +32,11 @@ class PolarRollRemapper(RemapperBase):
             theta and roll after transformation.
 
         """
-        pass
 
     @abstractmethod
-    def inverse_transform_polar(self, theta: Array, roll: Array, **kwargs: Any) -> tuple[Array, Array]:
+    def inverse_transform_polar(
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         """
         Inverse transform using polar coordinates.
 
@@ -54,7 +55,6 @@ class PolarRollRemapper(RemapperBase):
             theta and roll after transformation.
 
         """
-        pass
 
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         xp = array_api_compat.array_namespace(x, y)

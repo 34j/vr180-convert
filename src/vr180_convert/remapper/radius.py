@@ -28,10 +28,7 @@ def _get_radius(input: Array, *, threshold: int = 10) -> Array:
     """
     xp = array_api_compat.array_namespace(input)
     height, width = input.shape[-3:-1]
-    if width > height:
-        center_row = input[..., height // 2, :, :]
-    else:
-        center_row = input[..., :, width // 2, :]
+    center_row = input[..., height // 2, :, :] if width > height else input[..., :, width // 2, :]
     del height, width
 
     # determine if a pixel is black
@@ -43,8 +40,7 @@ def _get_radius(input: Array, *, threshold: int = 10) -> Array:
     center_row_black_end = center_row_is_black_deriv.shape[-1] - xp.argmax(
         xp.astype(xp.flip(center_row_is_black_deriv == -1, axis=-1), int), axis=-1
     )
-    radius = (center_row_black_end - center_row_black_start) / 2
-    return radius
+    return (center_row_black_end - center_row_black_start) / 2
 
 
 def _get_radius_smart(
