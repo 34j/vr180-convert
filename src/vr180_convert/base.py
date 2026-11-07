@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import attrs
-from array_api.latest import Array
+
+if TYPE_CHECKING:
+    from array_api.latest import Array
 
 
-class TransformerBase(metaclass=ABCMeta):
+class TransformerBase(ABC):
     @abstractmethod
     def transform(self, image: Array, /, **kwargs: Any) -> Array:
         """
@@ -25,7 +27,6 @@ class TransformerBase(metaclass=ABCMeta):
             Transformed image of shape (..., lr, height, width, channels).
 
         """
-        pass
 
     @abstractmethod
     def inverse_transform(self, image: Array, /, **kwargs: Any) -> Array:
@@ -43,14 +44,13 @@ class TransformerBase(metaclass=ABCMeta):
             Transformed image of shape (..., lr, height, width, channels).
 
         """
-        pass
 
     def __mul__(self, other: TransformerBase) -> TransformerBase:
         if isinstance(self, MultiTransformer) and isinstance(other, MultiTransformer):
             return MultiTransformer(transformers=[*self.transformers, *other.transformers])
-        elif isinstance(self, MultiTransformer):
+        if isinstance(self, MultiTransformer):
             return MultiTransformer(transformers=[*self.transformers, other])
-        elif isinstance(other, MultiTransformer):
+        if isinstance(other, MultiTransformer):
             return MultiTransformer(transformers=[self, *other.transformers])
         return MultiTransformer(transformers=[self, other])
 

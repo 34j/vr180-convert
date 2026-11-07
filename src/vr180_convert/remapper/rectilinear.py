@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import array_api_compat
 import attrs
-from array_api.latest import Array
 
 from vr180_convert.remapper.inverse import InverseRemapper
 from vr180_convert.remapper.polar_roll import PolarRollRemapper
+
+if TYPE_CHECKING:
+    from array_api.latest import Array
 
 
 @attrs.define()
@@ -23,14 +25,16 @@ class RectilinearEncoder(PolarRollRemapper):
 
     focal_length: float
     """The focal length of the lens in mm."""
-    sensor_width: Literal["35mm", "APS-H", "APS-C", "APS-C-Canon", "Foveon", "MFT"] | str | float = "35mm"
+    sensor_width: (
+        Literal["35mm", "APS-H", "APS-C", "APS-C-Canon", "Foveon", "MFT"] | str | float
+    ) = "35mm"
     """The sensor width of the camera in mm if float,
     or a standard sensor format name if str."""
 
     @property
     def sensor_width_mm(self) -> float:
         """Sensor width in mm."""
-        if self.sensor_width in ["35mm", "APS-C", "1/2.3"]:
+        if self.sensor_width in {"35mm", "APS-C", "1/2.3"}:
             warnings.warn(
                 "Sensor size may vary by about 0.2 mm depending on the camera model. "
                 "To get very accurate results, consider setting the sensor width in mm manually.",
@@ -71,7 +75,9 @@ class RectilinearEncoder(PolarRollRemapper):
         xp = array_api_compat.array_namespace(theta, roll)
         return xp.atan(theta / self.factor), roll
 
-    def inverse_transform_polar(self, theta: Array, roll: Array, **kwargs: Any) -> tuple[Array, Array]:
+    def inverse_transform_polar(
+        self, theta: Array, roll: Array, **kwargs: Any
+    ) -> tuple[Array, Array]:
         """
         Map angular radius to normalized radius (angle -> image).
 
@@ -83,7 +89,9 @@ class RectilinearEncoder(PolarRollRemapper):
 
 def RectilinearDecoder(
     focal_length: float,
-    sensor_width: Literal["35mm", "APS-H", "APS-C", "APS-C-Canon", "Foveon", "MFT"] | str | float = "35mm",
+    sensor_width: Literal["35mm", "APS-H", "APS-C", "APS-C-Canon", "Foveon", "MFT"]
+    | str
+    | float = "35mm",
 ) -> InverseRemapper[RectilinearEncoder]:
     """
     Decode equidistant coordinates back to a rectilinear (perspective) image.

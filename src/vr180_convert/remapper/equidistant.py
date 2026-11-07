@@ -30,11 +30,10 @@ def equidistant_to_3d(x: Array, y: Array) -> Array:
     xp = array_api_compat.array_namespace(x, y)
     phi = xp.atan2(x, y)
     theta = xp.sqrt(x**2 + y**2)
-    v = xp.stack(
+    return xp.stack(
         [xp.sin(theta) * xp.sin(phi), xp.sin(theta) * xp.cos(phi), xp.cos(theta)],
         axis=-1,
     )
-    return v
 
 
 def equidistant_from_3d(v: Array) -> tuple[Array, Array]:

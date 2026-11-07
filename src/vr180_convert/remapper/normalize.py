@@ -24,7 +24,7 @@ class NormalizeRemapper(RemapperBase):
         center = self.center or (x.shape[-1] / 2, x.shape[-2] / 2)
         scale = (
             min(x.shape[-2:])
-            if self.scale in ["min", None]
+            if self.scale in {"min", None}
             else max(x.shape[-2:])
             if self.scale == "max"
             else self.scale
@@ -39,7 +39,7 @@ class NormalizeRemapper(RemapperBase):
         center = self.center or (x.shape[-1] / 2, x.shape[-2] / 2)
         scale = (
             min(x.shape[-2:])
-            if self.scale in ["min", None]
+            if self.scale in {"min", None}
             else max(x.shape[-2:])
             if self.scale == "max"
             else self.scale

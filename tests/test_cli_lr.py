@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from pathlib import Path
 
 import cv2 as cv
@@ -57,13 +58,10 @@ def test_lr_mapping_types(
         mapping_type,
     ]
     if use_automatch:
-        args.append("--automatch")
-        args.append("fm")
+        args.extend(("--automatch", "fm"))
 
-    try:
+    with contextlib.suppress(SystemExit):
         app(args)
-    except SystemExit:
-        pass
 
     assert out.exists(), f"Output {out} was not created for {tag}"
     result = cv.imread(str(out))

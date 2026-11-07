@@ -5,10 +5,12 @@ from __future__ import annotations
 from collections.abc import Sequence
 from logging import getLogger
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import cv2 as cv
-from numpy.typing import NDArray
+
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
 
 LOG = getLogger(__name__)
 

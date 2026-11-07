@@ -1,18 +1,20 @@
 from __future__ import annotations
 
-from abc import ABCMeta
-from typing import Any
+from abc import ABC
+from typing import TYPE_CHECKING, Any
 
 import array_api_compat
 import attrs
 import numpy as np
 import torch
 import torch.nn.functional as F
-from array_api.latest import Array
 
 from vr180_convert.base import TransformerBase
 
-from .base import RemapperBase
+if TYPE_CHECKING:
+    from array_api.latest import Array
+
+    from .base import RemapperBase
 
 
 def _remap(
@@ -39,7 +41,10 @@ def _remap(
     """
     xp = array_api_compat.array_namespace(image, x, y)
     shape_extra = xp.broadcast_shapes(image.shape[:-3], x.shape[:-2], y.shape[:-2])
-    image = xp.broadcast_to(image, (*shape_extra, *image.shape[-3:])).reshape((-1, *image.shape[-3:]))
+    image = xp.broadcast_to(image, (*shape_extra, *image.shape[-3:])).reshape((
+        -1,
+        *image.shape[-3:],
+    ))
     image = xp.moveaxis(image, -1, 1)
     x = xp.broadcast_to(x, (*shape_extra, *x.shape[-2:])).reshape((-1, *x.shape[-2:]))
     y = xp.broadcast_to(y, (*shape_extra, *y.shape[-2:])).reshape((-1, *y.shape[-2:]))
@@ -54,7 +59,7 @@ def _remap(
 
 
 @attrs.define(kw_only=True)
-class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
+class RemapperTransformer(TransformerBase, ABC):
     remappers: list[RemapperBase]
     size_output: tuple[int, int]
     remap_kwargs: dict[str, Any] | None = None
@@ -66,7 +71,9 @@ class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
         for i, remapper in enumerate(list(self.remappers)):
             if remapper.requires_image:
 
-                def inner(x: Array, y: Array, /, i: int = i, **kwargs_inner: Any) -> tuple[Array, Array]:
+                def inner(
+                    x: Array, y: Array, /, i: int = i, **kwargs_inner: Any
+                ) -> tuple[Array, Array]:
                     for remapper_before in self.remappers[:i]:
                         x, y = remapper_before.inverse_remap(x, y, **kwargs_inner)
                     return x, y
@@ -80,4 +87,4 @@ class RemapperTransformer(TransformerBase, metaclass=ABCMeta):
         return _remap(image, xmap, ymap, **(self.remap_kwargs or {}))
 
     def inverse_transform(self, image: Array, /, **kwargs: Any) -> Array:
-        raise NotImplementedError()
+        raise NotImplementedError

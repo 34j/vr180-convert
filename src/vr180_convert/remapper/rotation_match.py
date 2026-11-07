@@ -1,18 +1,20 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import array_api_compat
 import attrs
 import numpy as np
-from array_api.latest import Array
 from quaternion import as_float_array, as_quat_array, quaternion, rotate_vectors
 
 from vr180_convert.remapper.base import RemapperBase, UnfitError
 
 from .euclidean import Euclidean3DRotator, equidistant_to_3d
 from .feature_match import MatchResult, feature_match_points
+
+if TYPE_CHECKING:
+    from array_api.latest import Array
 
 
 def rotation_match(
@@ -55,12 +57,18 @@ def rotation_match(
     b = np.concatenate([points, np.zeros_like(points[..., :1])], axis=1)
     bx, by, bz, bw = b[..., 0], b[..., 1], b[..., 2], b[..., 3]
 
-    right_mult_matrix = np.asarray(
-        [[aw, -az, ay, -ax], [az, aw, -ax, -ay], [-ay, ax, aw, -az], [ax, ay, az, aw]]
-    )
-    left_mult_matrix = np.asarray(
-        [[bw, bz, -by, -bx], [-bz, bw, bx, -by], [by, -bx, bw, -bz], [bx, by, bz, bw]]
-    )
+    right_mult_matrix = np.asarray([
+        [aw, -az, ay, -ax],
+        [az, aw, -ax, -ay],
+        [-ay, ax, aw, -az],
+        [ax, ay, az, aw],
+    ])
+    left_mult_matrix = np.asarray([
+        [bw, bz, -by, -bx],
+        [-bz, bw, bx, -by],
+        [by, -bx, bw, -bz],
+        [bx, by, bz, bw],
+    ])
     S = right_mult_matrix - left_mult_matrix
     B = np.einsum("...jik,...jlk->...il", S, S)
     eigenvalues, eigenvectors = np.linalg.eig(B)

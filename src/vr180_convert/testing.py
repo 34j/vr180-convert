@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from colorsys import hls_to_rgb
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import array_api_compat
 import cv2 as cv
 import numpy as np
-from array_api.latest import Array
+
+if TYPE_CHECKING:
+    from array_api.latest import Array
 
 
 def generate_test_image(size: int = 2048, path: str | Path | None = None) -> Array:

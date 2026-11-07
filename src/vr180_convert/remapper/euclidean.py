@@ -31,7 +31,6 @@ class Euclidean3DRemapper(RemapperBase):
             z axis is forward, x axis is right, y axis is up.
 
         """
-        pass
 
     @abstractmethod
     def inverse_transform_v(self, v: Array) -> Array:
@@ -51,7 +50,6 @@ class Euclidean3DRemapper(RemapperBase):
             z axis is forward, x axis is right, y axis is up.
 
         """
-        pass
 
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
         v = equidistant_to_3d(x, y)

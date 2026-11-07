@@ -1,6 +1,5 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
-exclude: "CHANGELOG.md|.copier-answers.yml"
 default_stages: [pre-commit]
 
 ci:
@@ -44,11 +43,3 @@ repos:
     rev: v2.4.3
     hooks:
       - id: codespell
-  # - repo: local
-  #   hooks:
-  #     - id: local-ty
-  #       name: ty check
-  #       entry: uv run ty check --exclude docs/conf.py
-  #       require_serial: true
-  #       language: system
-  #       pass_filenames: false

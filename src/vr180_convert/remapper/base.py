@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import attrs
-from array_api.latest import Array
+
+if TYPE_CHECKING:
+    from array_api.latest import Array
 
 
 class UnfitError(RuntimeError):
@@ -41,7 +43,6 @@ class RemapperBase:
             Inverse function to be used for fitting.
 
         """
-        pass
 
     @abstractmethod
     def remap(self, x: Array, y: Array, /, **kwargs: Any) -> tuple[Array, Array]:
@@ -91,9 +92,9 @@ class RemapperBase:
         """Multiply two transformers together."""
         if isinstance(self, MultiRemapper) and isinstance(other, MultiRemapper):
             return MultiRemapper(transformers=[*self.transformers, *other.transformers])
-        elif isinstance(self, MultiRemapper):
+        if isinstance(self, MultiRemapper):
             return MultiRemapper(transformers=[*self.transformers, other])
-        elif isinstance(other, MultiRemapper):
+        if isinstance(other, MultiRemapper):
             return MultiRemapper(transformers=[self, *other.transformers])
         return MultiRemapper(transformers=[self, other])
 
